@@ -1,0 +1,616 @@
+HACKATHON DEV DOCUMENT - 2024
+### Prepare those files on the hackathon team’s side
+1. Dockerfile (*)
+2. .env
+# Provide by Hackathon Organizers
+SOCKET_SERVER=SOCKET_SERVER:PORT
+
+	
+3. docker-compose.yml
+version: '3.8'
+
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+      limits:
+        cpus: '1'
+        memory: 1Gi
+      reservations:
+        cpus: '0.25'
+        memory: 250M
+
+	
+Start BOT
+	
+docker compose start bot
+
+	
+Stop BOT
+	
+docker compose stop bot
+
+	
+(*) Tùy thuộc vào ngôn ngữ lập trình mà các team lựa chọn, vui lòng chuẩn bị Dockerfile tương ứng hỗ trợ chạy ngôn ngữ đó.
+### Events
+
+Emit events
+
+LƯU Ý:
+(*) Các trường màu xám là các state của BOT phục vụ visualize BOT trên màn hình/quản lý state của BOT, các đội chơi có thể bỏ qua nếu thấy không cần thiết.
+Authenticate
+- Mô tả: Khi client muốn khởi tạo kết nối tới socket server, cần gửi lên token để có thể authenticate như sau:
+# Example JS code
+const auth = {
+  token: YOUR_TOKEN,
+};
+const socket = io(SOCKET_SERVER_ADDR, {
+  auth: auth
+});
+
+
+
+
+#
+Dữ liệu gửi đi
+Mô tả
+1
+token
+TOKEN cung cấp bởi BTC
+
+
+Join game
+- Event name: join
+- Data:
+    {}
+
+
+
+
+Move	
+  - Event name: move
+  - Data:
+    {
+      "orient": ORIENT // UP, DOWN, LEFT, RIGHT
+    }
+
+
+#
+Dữ liệu gửi đi
+Mô tả
+1
+orient
+Hướng đi của BOT, dữ liệu gửi lên là UP | DOWN | LEFT | RIGHT
+
+
+Shoot
+- Event name: shoot
+- Data:
+    {}
+
+
+Listening events
+Tham gia phòng chơi
+Khi bot tham gia vào phòng, bot đó sẽ nhận được message như sau:
+
+- Event name: user
+- Response data:    
+{
+    "map": [
+      [
+        "B", // brick
+        "W", // water
+        "T", // tree
+        null, // free space
+      ],
+      [
+        "B",
+        "W",
+        "T"
+        null, // free space
+      ],[
+        "B",
+        "W",
+        "T"
+        null, // free space
+      ]
+    ],
+    "tanks": [
+      {
+        "x": 166,
+        "y": 239,
+        "speed": 3,
+        "type": 1,
+        "uid": "UID",
+        "orient": "DOWN",
+        "isAlive": true,
+        "size": 33,
+        "name": "NAME_OF_TANK",
+        "shootable": false,
+        "shootCooldown": 17,
+        "invulnerable": false,
+        "protectCooldown": 0,
+        "score": 33,
+        "streak": 1,
+        "bounty": 0,
+        "color": 2,
+      },
+      ...
+    ],
+    "bullets": [
+      {
+        "x": 599648.5,
+        "y": 33.5,
+        "orient": "RIGHT",
+        "speed": 4,
+        "type": 1,
+        "size": 8,
+        "uid": "UID",
+        "id": 691,
+      },
+      ...
+    ],
+}
+
+
+
+
+Và các bot còn lại trong phòng nhận được message:
+
+- Event name: new_enemy
+- Response data:    
+{
+  "tank": {
+    "x": 120,
+    "y": 240,
+    "speed": 3,
+    "type": 1,
+    "uid": "UID",
+    "orient": "UP",
+    "isAlive": true,
+    "size": 33,
+    "name": "NAME",
+    "shootable": true,
+    "shootCooldown": 0,
+    "invulnerable": false,
+    "protectCooldown": 0,
+    "score": 0,
+    "streak": 0,
+    "bounty": 0,
+    "color": 1,
+  },
+  "tanks": [
+    {
+      "x": 580,
+      "y": 80,
+      "speed": 3,
+      "type": 1,
+      "uid": "UID",
+      "orient": "UP",
+      "isAlive": true,
+      "size": 33,
+      "name": "NAME",
+      "shootable": true,
+      "shootCooldown": 0,
+      "invulnerable": false,
+      "protectCooldown": 0,
+      "score": 10,
+      "streak": 0,
+      "bounty": 0,
+      "color": 3,
+    },
+    ...
+  ],
+}
+
+
+
+
+map (1)
+Dữ liệu trả về trong map là 1 mảng 2 chiều, các phần tử có ý nghĩa như bảng dưới đây
+#
+Dữ liệu trả về
+Mô tả
+1
+B
+Các bức tường
+2
+W
+Dòng sông
+3
+T
+Cây cối
+4
+null
+Các khoảng trống có thể di chuyển
+
+
+tanks (2)
+Dữ liệu trả về là 1 mảng chứa các object tank, mô tả dưới đây dành cho 1 object tank
+#
+Dữ liệu trả về
+Mô tả
+1
+x
+Tọa độ x của BOT trên bản đồ
+2
+y
+Tọa độ y của BOT trên bản đồ
+3
+speed
+Tốc độ di chuyển của BOT
+4
+type
+Loại tank
+5
+uid
+UID của BOT 
+6
+orient
+Hướng đi hiện tại của BOT
+7
+isAlive
+Trạng thái sống/chết của BOT
+8
+size
+Kích thước của BOT
+9
+name
+Tên của BOT
+10
+shootable
+BOT có thể thực hiện lệnh bắn không
+11
+shootCooldown
+State để server quản lý thời gian bắn của BOT
+12
+invulnerable
+Trạng thái bất tử của BOT
+13
+protectCooldown
+State để server quản lý thời gian bất tử của BOT
+14
+score
+Điểm số của BOT
+15
+streak
+Chuỗi điểm hiện tại của BOT
+16
+bounty
+Lượng coin thưởng thêm khi hạ gục BOT
+17
+color
+State để hiển thị màu sắc của BOT
+
+
+
+bullet (3)
+#
+Dữ liệu trả về
+Mô tả
+1
+x
+Tọa độ x của viên đạn trên bản đồ
+2
+y
+Tọa độ y của viên đạn trên bản đồ
+3
+orient
+Hướng đi của viên đạn trên bản đồ
+4
+speed
+Tốc độ của viên đạn
+5
+type
+Type của đạn
+6
+size
+Kích thước của viên đạn
+7
+uid
+UID của BOT bắn đạn
+8
+id
+ID của viên đạn
+
+
+
+Bắt đầu game (*)
+(*) Sự kiện chỉ có ở bot thi đấu bởi BTC, các đội chơi khi tham gia server dev thì thực hiện join và thi đấu đến khi disconnect, không có bắt đầu game.
+
+- Event name: start
+- Response data:
+{
+  start_at: 2024-10-08T06:47:50.731Z
+}
+
+
+Di chuyển
+Khi bot di chuyển, tất	cả các bot trong phòng sẽ nhận được thông báo 
+- Event name: player_move
+- Response data:
+{
+  "x": 570,
+  "y": 283,
+  "speed": 3,
+  "type": 1,
+  "uid": "hks6XsCBLoRgqqJSAAAE",
+  "orient": "LEFT",
+  "isAlive": true,
+  "size": 33,
+  "name": "BOT-575",
+  "shootable": false,
+  "shootCooldown": 23,
+  "invulnerable": false,
+  "protectCooldown": 0,
+  "score": 0,
+  "streak": 0,
+  "bounty": 0,
+  "color": 2,
+}
+
+
+*Lưu ý: Mô tả dữ liệu trả về tham khảo mục tank (2)
+Bắn
+Khi bot trong phòng thực hiện lệnh bắn, các bot trong phòng sẽ nhận được sự kiện
+- Event name: new_bullet
+- Response data:
+{
+    "x": 579.5,
+    "y": 295.5,
+    "orient": "LEFT",
+    "speed": 4,
+    "type": 1,
+    "size": 8,
+    "uid": "UID",
+    "id": 4708,
+}
+
+*Lưu ý: Mô tả dữ liệu trả về tham khảo mục bullet (3)
+
+Hạ gục đối phương
+Khi 1 bot bị hạ gục, các bot khác sẽ nhận được các sự kiện:
+- Event name: new_life
+- Response data:
+{
+    "x": 640,
+    "y": 640,
+    "speed": 3,
+    "type": 1,
+    "uid": "UID",
+    "orient": "UP",
+    "isAlive": true,
+    "size": 33,
+    "name": "TEST",
+    "shootable": true,
+    "shootCooldown": 0,
+    "invulnerable": true,
+    "protectCooldown": 0,
+    "score": 43,
+    "streak": 0,
+    "bounty": 0,
+    "color": 1,
+}
+
+
+*Lưu ý: Mô tả dữ liệu trả về tham khảo mục tank (2)
+
+
+
+
+Và
+- Event name: user_die_update
+- Response data:
+{
+    "killer": {
+      "x": 287,
+      "y": 453,
+      "speed": 3,
+      "type": 1,
+      "uid": "wMxL4X9C-Z-rNS4nAAAe",
+      "orient": "DOWN",
+      "isAlive": true,
+      "size": 33,
+      "name": "TEST",
+      "shootable": false,
+      "shootCooldown": 5,
+      "invulnerable": false,
+      "protectCooldown": 0,
+      "score": 10,
+      "streak": 1,
+      "bounty": 0,
+      "color": 3,
+    },
+    "killed": {
+      "x": 297,
+      "y": 486,
+      "speed": 3,
+      "type": 1,
+      "uid": "WlmZAoGMO6AP16stAAAd",
+      "orient": "UP",
+      "isAlive": false,
+      "size": 33,
+      "name": "BOT-913",
+      "shootable": false,
+      "shootCooldown": 1,
+      "invulnerable": false,
+      "protectCooldown": 0,
+      "score": 0,
+      "streak": 0,
+      "bounty": 0,
+      "color": 2,
+    },
+    "bullet": {
+      "x": 299.5,
+      "y": 481.5,
+      "orient": "DOWN",
+      "speed": 4,
+      "type": 1,
+      "size": 8,
+      "uid": "wMxL4X9C-Z-rNS4nAAAe",
+      "id": 9908,
+    },
+    "tanks": [
+      {
+        "x": 739,
+        "y": 527,
+        "speed": 3,
+        "type": 1,
+        "uid": "hks6XsCBLoRgqqJSAAAE",
+        "orient": "UP",
+        "isAlive": true,
+        "size": 33,
+        "name": "BOT-575",
+        "shootable": false,
+        "shootCooldown": 23,
+        "invulnerable": false,
+        "protectCooldown": 0,
+        "score": 63,
+        "streak": 4,
+        "bounty": 9,
+        "color": 2,
+      },
+      ...
+    ],
+}
+
+
+killer | killed
+#
+Dữ liệu trả về
+Mô tả
+1
+x
+Tọa độ x của BOT vừa kill trên bản đồ
+2
+y
+Tọa độ y của BOT vừa kill trên bản đồ
+3
+speed
+Tốc độ của BOT vừa kill trên bản đồ
+4
+type
+Type của BOT
+5
+uid
+UID của BOT trên bản đồ 
+6
+orient
+Hướng đi của BOT trên bản đồ
+7
+isAlive
+Trạng thái sống/chết của BOT trên bản đồ
+8
+size
+Kích thước của BOT trên bản đồ
+9
+name
+Tên của BOT
+10
+shootable
+BOT có thể thực hiện lệnh bắn không
+11
+shootCooldown
+State để server quản lý thời gian bắn của BOT
+12
+invulnerable
+Trạng thái bất tử của BOT vừa kill
+13
+protectCooldown
+State để server quản lý thời gian bất tử của BOT
+14
+score
+Điểm của BOT vừa kill
+15
+bounty
+Chuỗi điểm hiện tại của BOT
+16
+streak
+Lượng coin thưởng thêm khi hạ gục BOT
+17
+color
+Màu của BOT vừa kill
+
+
+*Lưu ý: Mô tả dữ liệu trả về tham khảo mục tank (2)
+Cập nhật thông tin Bot
+Sau khi bị hạ gục, bot có 3 giây ở trạng thái bất tử (invulnerable), sau khi bot hết trạng thái bất tử, các bot khác trong phòng sẽ nhận được thông báo thông qua sự kiện
+- Event name: user_update
+- Response data:
+{
+  "uid": "xxx",
+  "name": "xxx",
+  "x": X,
+  "y": Y,
+  "orient": 1,
+  "score": 0,
+  "bounty": 0,
+  "streak": 0,
+}
+
+
+#
+Dữ liệu trả về
+Mô tả
+1
+uid
+UID của bot, được tạo ra từ phía server
+2
+name
+Tên của BOT
+3
+x
+Tọa độ x của BOT trên bản đồ
+4
+y
+Tọa độ y của BOT trên bản đồ
+5
+orient
+Hướng đi của BOT trên bản đồ
+6
+score
+Điểm số của BOT hiện tại
+7
+bounty
+Chuỗi điểm hiện tại của BOT
+7
+streak
+Lượng coin thưởng thêm khi hạ gục BOT
+
+
+Bot thoát khỏi phòng chơi (*)
+(*) Ở môi trường dev, khi socket disconnect bot sẽ bị xoá khỏi server đó. Với môi trường thi đấu, bot sẽ đứng yên tại vị trí hiện tại.
+- Event name: user_disconnect
+- Response data:   
+{
+      "uid": "UID"
+}
+
+		
+
+#
+Dữ liệu trả về
+Mô tả
+1
+uid
+UID của bot, được tạo ra từ phía server
+
+
+
+Kết thúc game  (*)
+(*) Sự kiện chỉ có ở bot thi đấu bởi BTC, các đội chơi khi tham gia server dev thì thực hiện join và thi đấu đến khi disconnect, không có kết thúc.
+
+- Event name: finish
+- Response data:
+{
+    
+}
+
+
