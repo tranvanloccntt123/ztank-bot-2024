@@ -341,27 +341,27 @@ export const checkBulletInsideTank = (
   bullet: Position
 ) => {
   if (
-    _.inRange(bullet.x, tankPosition.x - 8, tankPosition.x + TankSize + 9) &&
-    _.inRange(bullet.y, tankPosition.y - 8, tankPosition.y + TankSize + 9)
+    _.inRange(bullet.x, tankPosition.x - 1, tankPosition.x + TankSize + 2) &&
+    _.inRange(bullet.y, tankPosition.y - 1, tankPosition.y + TankSize + 2)
   ) {
     return true;
   }
   if (
     _.inRange(
       bullet.x + BulletSize,
-      tankPosition.x - 8,
-      tankPosition.x + TankSize + 9
+      tankPosition.x - 1,
+      tankPosition.x + TankSize + 2
     ) &&
-    _.inRange(bullet.y, tankPosition.y - 8, tankPosition.y + TankSize + 9)
+    _.inRange(bullet.y, tankPosition.y - 1, tankPosition.y + TankSize + 2)
   ) {
     return true;
   }
   if (
-    _.inRange(bullet.x, tankPosition.x - 8, tankPosition.x + TankSize + 9) &&
+    _.inRange(bullet.x, tankPosition.x - 1, tankPosition.x + TankSize + 2) &&
     _.inRange(
       bullet.y + BulletSize,
-      tankPosition.y - 8,
-      tankPosition.y + TankSize + 9
+      tankPosition.y - 1,
+      tankPosition.y + TankSize + 2
     )
   ) {
     return true;
@@ -369,13 +369,13 @@ export const checkBulletInsideTank = (
   if (
     _.inRange(
       bullet.x + BulletSize,
-      tankPosition.x - 8,
-      tankPosition.x + TankSize + 9
+      tankPosition.x - 1,
+      tankPosition.x + TankSize + 2
     ) &&
     _.inRange(
       bullet.y + BulletSize,
-      tankPosition.y - 8,
-      tankPosition.y + TankSize + 9
+      tankPosition.y - 1,
+      tankPosition.y + TankSize + 2
     )
   ) {
     return true;
@@ -539,37 +539,10 @@ export const checkBlockBetweenBulletAndTank = (
 
 export let dodgeRoad: Array<{ orient: Orient | null; count: number }> = [];
 
-export let dodgeRoadChecked: Set<string> = new Set();
-
-export const hasDodgeRoadChecked = (
-  position: Position & { orient: Orient }
-) => {
-  return dodgeRoadChecked.has(
-    `${Math.floor(position.x)}-${Math.floor(position.y)}-${position.orient}`
-  );
-};
-
-export const addDodgeRoadChecked = (
-  position: Position & { orient: Orient }
-) => {
-  dodgeRoadChecked.add(
-    `${Math.floor(position.x)}-${Math.floor(position.y)}-${position.orient}`
-  );
-};
-
-export const deleteDodgeRoadChecked = (
-  position: Position & { orient: Orient }
-) => {
-  dodgeRoadChecked.delete(
-    `${Math.floor(position.x)}-${Math.floor(position.y)}-${position.orient}`
-  );
-};
-
 let tmpBullets: Array<Bullet> = [];
 
 export const clearDedgeRoad = (bullets: Array<Bullet>) => {
   dodgeRoad = [];
-  dodgeRoadChecked.clear();
   tmpBullets = bullets;
 };
 
@@ -618,23 +591,15 @@ export const dodgeBullets = (
           ...tankPositionAtNextTime(tankPosition, orient as never),
           orient,
         };
-        if (!hasDodgeRoadChecked(movePosition as never)) {
-          dodgeRoad.push({
-            orient,
-            count: 1,
-          } as never);
-          addDodgeRoadChecked(movePosition as never);
-          const responseUp = dodgeBullets(
-            movePosition as never,
-            ms + TankTimeSpeed,
-            stepCount + 1
-          );
-          if (responseUp) {
-            return responseUp;
-          }
-          dodgeRoad.pop();
-          deleteDodgeRoadChecked(movePosition as never);
+        const responseUp = dodgeBullets(
+          movePosition as never,
+          ms + TankTimeSpeed,
+          stepCount + 1
+        );
+        if (responseUp) {
+          return responseUp;
         }
+        dodgeRoad.pop();
       }
     }
   }

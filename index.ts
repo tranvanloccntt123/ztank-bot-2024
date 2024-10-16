@@ -8,7 +8,6 @@ import {
   tankAtNextTime,
 } from "./utils";
 import {
-  addDodgeRoadChecked,
   bullets,
   checkBulletInsideTank,
   clearDedgeRoad,
@@ -61,15 +60,9 @@ const main = async () => {
           i <= Math.floor(Math.random() * Math.floor(300 / TankSpeed) + 20);
           i++
         ) {
-          if (!isReborn.has(myTank.uid)) {
-            clearDedgeRoad(Array.from(bullets.values()));
+          if (!isReborn.has(myTank.name)) {
             if (bullets.size) {
-              const currentPosition = {
-                x: myTank.x,
-                y: myTank.y,
-                orient: myTank.orient,
-              };
-              addDodgeRoadChecked(currentPosition as never);
+              clearDedgeRoad(Array.from(bullets.values()));
               const dodge = dodgeBullets(
                 { x: myTank.x, y: myTank.y, orient: myTank.orient },
                 0,
@@ -90,6 +83,9 @@ const main = async () => {
               }
             }
           }
+          // if (isShootAble) {
+          //   await shootNow();
+          // }
           const _orientList = moveVisible(mapMatch, myTank);
           if (!_orientList.includes(orientTest)) {
             orientTest = _orientList[
@@ -112,14 +108,11 @@ const main = async () => {
             moveTank(orientTest);
             await movePromise;
           }
-          if (isShootAble) {
-            await shootNow();
-          }
         }
       }
     } catch (e) {
     } finally {
-      await sleep(2);
+      await sleep(5);
     }
   }
 };
@@ -128,6 +121,6 @@ joinMatch();
 
 main();
 
-startIntervalToCheckBullet();
+// startIntervalToCheckBullet();
 
 startTrickShootSystem();

@@ -1,36 +1,23 @@
 import _ from "lodash";
-import { moveTank, shoot } from "./connect";
+import { shoot } from "./connect";
 import {
   TankSize,
   BulletSize,
   ShootAbleTime,
-  TankTimeSpeed,
   MapSize,
-  MY_NAME,
 } from "./constants";
 import {
-  addDodgeRoadChecked,
-  blockPosition,
   bullets,
-  clearDedgeRoad,
-  dodgeBullets,
-  dodgeRoad,
   hasBlockPosition,
-  isMoveAble,
   isShootAble,
   mapMatch,
-  movePromise,
   myTank,
-  saveIsDodgeAble,
   tanks,
-  tanksId,
 } from "./store";
 import { bulletPositionAtRunTime, euclideanDistance } from "./utils";
 
-let countDownTrickShoot: any = null;
-
 export const startTrickShootSystem = () => {
-  countDownTrickShoot = setInterval(async () => {
+  setInterval(async () => {
     if (isShootAble && myTank) {
       tanks.forEach((tank) => {
         if (
@@ -113,43 +100,7 @@ export const startTrickShootSystem = () => {
         }
       });
     }
-  }, ShootAbleTime / 3);
-};
-
-let countDownDodgeRoad: any = null;
-
-export const startFindDodgeRoadSystem = () => {
-  countDownDodgeRoad = setInterval(async () => {
-    if (!myTank) {
-      return;
-    }
-    const currentPosition = {
-      x: myTank.x,
-      y: myTank.y,
-      origin: myTank.orient,
-    };
-    clearDedgeRoad(Array.from(bullets.values()));
-    addDodgeRoadChecked(currentPosition as never);
-    const dodge = dodgeBullets(
-      { x: myTank.x, y: myTank.y, orient: myTank.orient },
-      0,
-      0
-    );
-    if (dodge && dodgeRoad.length) {
-      saveIsDodgeAble(true);
-      await movePromise;
-      for (const road of dodgeRoad) {
-        if (!road.orient) {
-          continue;
-        }
-        for (let i = 0; i < road.count; i++) {
-          moveTank(road.orient);
-          await movePromise;
-        }
-      }
-      saveIsDodgeAble(false);
-    }
-  }, 3);
+  }, ShootAbleTime);
 };
 
 let countDownMove: any = null;
