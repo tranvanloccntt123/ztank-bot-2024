@@ -1,37 +1,24 @@
-import {
-  EmitEvent,
-  MY_NAME,
-  TankSize,
-  TankSpeed,
-  TankTimeSpeed,
-} from "./constants";
+import { EmitEvent, MY_NAME, TankSpeed, TankTimeSpeed } from "./constants";
 import { joinMatch, moveTank, shoot } from "./connect";
 import {
   bulletPositionAtPlustime,
   checkTanksCanShootNow,
-  euclideanDistance,
   moveVisible,
   sleep,
   tankAtNextTime,
 } from "./utils";
 import {
   addDodgeRoadChecked,
-  bulletInsideTankHorizontal,
-  bulletInsideTankVertical,
   bullets,
   checkBulletInsideTank,
-  checkTankPositionIsObject,
   clearDedgeRoad,
   dodgeBullets,
   dodgeRoad,
-  dodgeRoadChecked,
-  hasObjectPosition,
-  isDodgeAble,
+  isReborn,
   isShootAble,
   mapMatch,
   movePromise,
   myTank,
-  objectPosition,
   startPromise,
   tanks,
   tanksId,
@@ -74,38 +61,34 @@ const main = async () => {
           i <= Math.floor(Math.random() * Math.floor(300 / TankSpeed) + 20);
           i++
         ) {
-          clearDedgeRoad();
-          const currentPosition = {
-            x: myTank.x,
-            y: myTank.y,
-            origin: myTank.orient,
-          };
-          addDodgeRoadChecked(currentPosition as never);
-          const dodge = dodgeBullets(
-            { x: myTank.x, y: myTank.y, orient: myTank.orient },
-            Array.from(bullets.values()).filter((v) => {
-              const name = tanksId.get(v.uid);
-              if (name === MY_NAME) {
-                return false;
-              }
-              return true;
-            }),
-            0,
-            0
-          );
-          if (dodge && dodgeRoad.length) {
-            for (const road of dodgeRoad) {
-              if (!road.orient) {
+          if (!isReborn.has(myTank.uid)) {
+            clearDedgeRoad(Array.from(bullets.values()));
+            if (bullets.size) {
+              const currentPosition = {
+                x: myTank.x,
+                y: myTank.y,
+                orient: myTank.orient,
+              };
+              addDodgeRoadChecked(currentPosition as never);
+              const dodge = dodgeBullets(
+                { x: myTank.x, y: myTank.y, orient: myTank.orient },
+                0,
+                0
+              );
+              if (dodge && dodgeRoad.length) {
+                for (const road of dodgeRoad) {
+                  if (!road.orient) {
+                    continue;
+                  }
+                  for (let i = 0; i < road.count; i++) {
+                    moveTank(road.orient);
+                    orientTest = road.orient;
+                    await movePromise;
+                  }
+                }
                 continue;
               }
-              for (let i = 0; i < road.count; i++) {
-                moveTank(road.orient);
-                orientTest = road.orient;
-                await movePromise;
-              }
             }
-            dodgeRoadChecked.delete(JSON.stringify(currentPosition));
-            continue;
           }
           const _orientList = moveVisible(mapMatch, myTank);
           if (!_orientList.includes(orientTest)) {
@@ -136,7 +119,7 @@ const main = async () => {
       }
     } catch (e) {
     } finally {
-      await sleep(3);
+      await sleep(2);
     }
   }
 };

@@ -3,10 +3,7 @@ import {
   EmitEvent,
   Events,
   MY_NAME,
-  SERVER_1,
   SERVER_2,
-  SERVER_3,
-  SERVER_4,
   TankTimeSpeed,
   Token,
 } from "./constants";
@@ -26,15 +23,20 @@ import {
   saveIsMoveAble,
   dodgeRoad,
   dodgeRoadChecked,
+  saveIsJoinning,
+  resolveJoiningPromise,
 } from "./store";
 
-const socket = io(process?.env?.SOCKET_SERVER ?? SERVER_3, {
+const socket = io(process?.env?.SOCKET_SERVER ?? SERVER_2, {
   auth: {
     token: Token,
   },
 });
 
-export const joinMatch = () => socket.emit(EmitEvent.Join);
+export const joinMatch = () => {
+  socket.emit(EmitEvent.Join);
+  saveIsJoinning(true);
+};
 
 export const shoot = () => {
   socket.emit(EmitEvent.Shoot);
@@ -59,6 +61,8 @@ socket.on(
       data.bullets.map((bullet) => ({ ...bullet, time: new Date().getTime() }))
     );
     resolveStartPromise(true);
+    resolveJoiningPromise(true);
+    saveIsJoinning(false);
     //run main it's here
   }
 );
@@ -118,7 +122,10 @@ socket.on(Events.Shoot, (data: Bullet) => {
 
 socket.on(Events.UserDisconnect, (data: string) => {
   //
-  joinMatch();
+  // console.log("USER DISCONNECT");
+  // if (!isJoinning) {
+  //   joinMatch();
+  // }
 });
 
 socket.on(Events.Finish, () => {

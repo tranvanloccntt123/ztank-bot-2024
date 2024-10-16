@@ -128,16 +128,10 @@ export const startFindDodgeRoadSystem = () => {
       y: myTank.y,
       origin: myTank.orient,
     };
+    clearDedgeRoad(Array.from(bullets.values()));
     addDodgeRoadChecked(currentPosition as never);
     const dodge = dodgeBullets(
       { x: myTank.x, y: myTank.y, orient: myTank.orient },
-      Array.from(bullets.values()).filter((v) => {
-        const name = tanksId.get(v.uid);
-        if (name === MY_NAME) {
-          return false;
-        }
-        return true;
-      }),
       0,
       0
     );

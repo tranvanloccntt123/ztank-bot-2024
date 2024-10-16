@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "npx tsx index.ts"
+    "start": "npx tsx index.ts",
+    "localTest": "npx tsx test.ts"
   },
   "author": "",
   "license": "ISC",

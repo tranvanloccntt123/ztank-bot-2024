@@ -46,11 +46,15 @@ export let resolveShootPromise: any = null;
 
 export let resolveMovePromise: any = null;
 
+export let resolveJoiningPromise: any = null;
+
 export let isShootAble: boolean = true;
 
 export let isMoveAble: boolean = true;
 
 export let isDodgeAble: boolean = false;
+
+export let isJoinning: boolean = false;
 
 export let startPromise = new Promise<boolean>(
   (resolve) => (resolveStartPromise = resolve)
@@ -64,11 +68,17 @@ export let shootPromise = new Promise<boolean>(
   (resolve) => (resolveShootPromise = resolve)
 );
 
+export let joiningPromise = new Promise<boolean>(
+  (resolve) => (resolveJoiningPromise = resolve)
+);
+
 export const resetMovePromise = () => {
   movePromise = new Promise<boolean>(
     (resolve) => (resolveMovePromise = resolve)
   );
 };
+
+export const saveIsJoinning = (_v: boolean) => (isJoinning = _v);
 
 export const saveIsDodgeAble = (_v: boolean) => (isDodgeAble = _v);
 
@@ -85,26 +95,22 @@ export const clearIsReboring = (tankName: string) => {
 };
 
 export const addBlockPosition = (position: Position) => {
-  blockPosition.add(
-    `${parseInt(position.x.toString())}-${parseInt(position.y.toString())}`
-  );
+  blockPosition.add(`${Math.floor(position.x)}-${Math.floor(position.y)}`);
 };
 
 export const hasBlockPosition = (position: Position) => {
   return blockPosition.has(
-    `${parseInt(position.x.toString())}-${position.y.toString()}`
+    `${Math.floor(position.x)}-${Math.floor(position.y)}`
   );
 };
 
 export const addObjectPosition = (position: Position) => {
-  objectPosition.add(
-    `${parseInt(position.x.toString())}-${parseInt(position.y.toString())}`
-  );
+  objectPosition.add(`${Math.floor(position.x)}-${Math.floor(position.y)}`);
 };
 
 export const hasObjectPosition = (position: Position) => {
   return objectPosition.has(
-    `${parseInt(position.x.toString())}-${parseInt(position.y.toString())}`
+    `${Math.floor(position.x)}-${Math.floor(position.y)}`
   );
 };
 
@@ -149,7 +155,9 @@ export const saveTanks = (_tanks: Array<Tank>) => {
 
 export const saveBullets = (_bullets: Array<Bullet>) => {
   _bullets.forEach((bullet) => {
-    bullets.set(bullet.id, bullet);
+    if (bullet.uid !== myTank?.uid) {
+      bullets.set(bullet.id, bullet);
+    }
   });
 };
 
@@ -233,13 +241,13 @@ export const bulletInsideTankVertical = (
   return (
     _.inRange(
       bulletPosition?.x ?? 0,
-      tankPosition.x,
-      tankPosition.x + TankSize + 1
+      tankPosition.x - 1,
+      tankPosition.x + TankSize + 2
     ) ||
     _.inRange(
       (bulletPosition?.x ?? 0) + BulletSize,
-      tankPosition.x,
-      tankPosition.x + TankSize + 1 + 1
+      tankPosition.x - 1,
+      tankPosition.x + TankSize + 1 + 2
     )
   );
 };
@@ -251,13 +259,13 @@ export const bulletInsideTankHorizontal = (
   return (
     _.inRange(
       bulletPosition?.y ?? 0,
-      tankPosition.y,
-      tankPosition.y + TankSize + 1
+      tankPosition.y - 1,
+      tankPosition.y + TankSize + 2
     ) ||
     _.inRange(
       (bulletPosition?.y ?? 0) + BulletSize,
-      tankPosition.y,
-      tankPosition.y + TankSize + 1
+      tankPosition.y - 1,
+      tankPosition.y + TankSize + 2
     )
   );
 };
@@ -382,7 +390,7 @@ export const checkBulletInsideTank = (
 export const checkBulletRunningToTank = (
   tankPosition: Position,
   bulletPosition: Position & { orient: Orient },
-  distance = TankSize * 4
+  distance = TankSize * 5
 ) => {
   if (
     bulletInsideTankVertical(tankPosition, bulletPosition) &&
@@ -536,29 +544,37 @@ export let dodgeRoadChecked: Set<string> = new Set();
 export const hasDodgeRoadChecked = (
   position: Position & { orient: Orient }
 ) => {
-  return dodgeRoadChecked.has(`${position.x}-${position.y}-${position.orient}`);
+  return dodgeRoadChecked.has(
+    `${Math.floor(position.x)}-${Math.floor(position.y)}-${position.orient}`
+  );
 };
 
 export const addDodgeRoadChecked = (
   position: Position & { orient: Orient }
 ) => {
-  dodgeRoadChecked.add(`${position.x}-${position.y}-${position.orient}`);
+  dodgeRoadChecked.add(
+    `${Math.floor(position.x)}-${Math.floor(position.y)}-${position.orient}`
+  );
 };
 
 export const deleteDodgeRoadChecked = (
   position: Position & { orient: Orient }
 ) => {
-  dodgeRoadChecked.delete(`${position.x}-${position.y}-${position.orient}`);
+  dodgeRoadChecked.delete(
+    `${Math.floor(position.x)}-${Math.floor(position.y)}-${position.orient}`
+  );
 };
 
-export const clearDedgeRoad = () => {
+let tmpBullets: Array<Bullet> = [];
+
+export const clearDedgeRoad = (bullets: Array<Bullet>) => {
   dodgeRoad = [];
   dodgeRoadChecked.clear();
+  tmpBullets = bullets;
 };
 
 export const dodgeBullets = (
   tankPosition: Position & { orient: Orient },
-  bullets: Array<Bullet>,
   ms: number,
   stepCount: number
 ): boolean => {
@@ -570,31 +586,21 @@ export const dodgeBullets = (
   ) {
     return false;
   }
-  if (stepCount >= 40) {
+  if (stepCount >= 25) {
     return false;
   }
   if (checkTankPositionIsObject(tankPosition)) {
     return false;
   }
   let isSafe = true;
-  const bulletUnblock = bullets.filter((bullet) => {
+  for (const bullet of tmpBullets) {
     const bulletPosition = bulletPositionAtPlustime(bullet, ms);
-    if (checkBulletInsideBlock(bulletPosition)) {
-      return false;
-    }
-    return true;
-  });
-
-  const bulletInsideSafeArea = bulletUnblock.filter(
-    (bullet) =>
-      euclideanDistance(tankPosition, bulletPositionAtPlustime(bullet, ms)) <
-      TankSize * 3
-  );
-  for (const bullet of bulletInsideSafeArea) {
-    if (bullet.uid === myTank?.uid) {
+    if (euclideanDistance(tankPosition, bulletPosition) >= TankSize * 5) {
       continue;
     }
-    const bulletPosition = bulletPositionAtPlustime(bullet, ms);
+    if (checkBulletInsideBlock(bulletPosition)) {
+      continue;
+    }
     if (checkBulletInsideTank(tankPosition, bulletPosition)) {
       return false;
     }
@@ -606,13 +612,8 @@ export const dodgeBullets = (
     ) {
       isSafe = false;
       const orients = ["UP", "DOWN", "RIGHT", "LEFT"];
-      const unOrients = ["DOWN", "UP", "LEFT", "RIGHT"];
       for (const i in orients) {
         const orient = orients[i];
-        const unOrient = unOrients[i];
-        if (unOrient === bullet.orient) {
-          continue;
-        }
         const movePosition = {
           ...tankPositionAtNextTime(tankPosition, orient as never),
           orient,
@@ -625,7 +626,6 @@ export const dodgeBullets = (
           addDodgeRoadChecked(movePosition as never);
           const responseUp = dodgeBullets(
             movePosition as never,
-            bulletUnblock,
             ms + TankTimeSpeed,
             stepCount + 1
           );
@@ -638,5 +638,5 @@ export const dodgeBullets = (
       }
     }
   }
-  return isSafe ? dodgeRoad.length > 0 : false;
+  return isSafe;
 };
