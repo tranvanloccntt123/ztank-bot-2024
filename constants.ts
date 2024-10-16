@@ -50,9 +50,9 @@ export const TankTimeSpeed: number = 17; //ms
 
 export const BulletTimeSpeed: number = 17; //ms
 
-export const BulletSize = 3;
+export const BulletSize = 8;
 
-export const ShootAbleTime = 510;
+export const ShootAbleTime = 1020;
 
 export const ShootAreaSize = 20;
 
@@ -60,39 +60,3 @@ export const MapSize = {
   width: 900,
   height: 700,
 };
-
-export let isFinish = true;
-
-export let prevPosition = initPosition(-1, -1);
-
-export let prevOrient: Orient | null = null;
-
-export let runTime = new Date().getTime();
-
-export let resolveStartPromise: any = null;
-
-export let resolveShootPromise: any = null;
-
-export let resolveMovePromise: any = null;
-
-export let isShootAble: boolean = true;
-
-export let startPromise = new Promise<boolean>(
-  (resolve) => (resolveStartPromise = resolve)
-);
-
-export let movePromise = new Promise<boolean>(
-  (resolve) => (resolveMovePromise = resolve)
-);
-
-export let shootPromise = new Promise<boolean>(
-  (resolve) => (resolveShootPromise = resolve)
-);
-
-export const resetMovePromise = () => {
-  movePromise = new Promise<boolean>(
-    (resolve) => (resolveMovePromise = resolve)
-  );
-};
-
-export const saveIsShootAble = (_v: boolean) => (isShootAble = _v);

@@ -3,32 +3,33 @@ import {
   BulletSpeed,
   BulletTimeSpeed,
   EmitEvent,
+  MY_NAME,
   ObjectSize,
   ShootAreaSize,
   TankOnObjectPercent,
   TankSize,
   TankSpeed,
 } from "./constants";
-import { bullets } from "./store";
+import { bullets, isReborn } from "./store";
 import * as _ from "lodash";
 
 export const initPosition = (x: number, y: number) => ({ x, y });
 
 export const moveRight = (position: { x: number; y: number }) => ({
-  x: position.x + TankSpeed,
-  y: position.y,
+  x: position?.x + TankSpeed,
+  y: position?.y,
 });
 export const moveLeft = (position: { x: number; y: number }) => ({
-  x: position.x - TankSpeed,
-  y: position.y,
+  x: position?.x - TankSpeed,
+  y: position?.y,
 });
 export const moveUp = (position: { x: number; y: number }) => ({
-  x: position.x,
-  y: position.y - TankSpeed,
+  x: position?.x,
+  y: position?.y - TankSpeed,
 });
 export const moveDown = (position: { x: number; y: number }) => ({
-  x: position.x,
-  y: position.y + TankSpeed,
+  x: position?.x,
+  y: position?.y + TankSpeed,
 });
 
 // export const mapIndexMoveRight = (mapIndex: MapIndex):MapIndex => ({
@@ -40,15 +41,24 @@ export const sleep = async (ms: number) =>
     setTimeout(() => resolve(true), ms);
   });
 
-export const mapIndexOnMapMatch = (position: Position): MapIndex => {
+export const mapIndexOnMapMatch = (
+  position: Position,
+  size?: number
+): MapIndex => {
   const mapIndex = initPosition(
-    position.x / ObjectSize,
-    position.y / ObjectSize
+    (position?.x ?? 0) / ObjectSize,
+    (position?.y ?? 0) / ObjectSize
   );
   const startX = parseInt(mapIndex.x.toString(), 10);
   const startY = parseInt(mapIndex.y.toString(), 10);
-  const endX = parseInt((mapIndex.x + TankOnObjectPercent).toString(), 10);
-  const endY = parseInt((mapIndex.y + TankOnObjectPercent).toString(), 10);
+  const endX = parseInt(
+    (mapIndex.x + (size ?? TankOnObjectPercent)).toString(),
+    10
+  );
+  const endY = parseInt(
+    (mapIndex.y + (size ?? TankOnObjectPercent)).toString(),
+    10
+  );
   return {
     startX,
     startY,
@@ -96,23 +106,6 @@ export const findRoad = (
   }
 };
 
-export const calculateRoadToOtherTanks = (
-  map: MapMatch,
-  tanks: Array<Tank>,
-  myTank: Tank
-) => {
-  // const tanksPositions: Map<string, Position> = new Map();
-  // tanks.forEach((tank) => {
-  //   if (tank.uid !== myTank.uid) {
-  //     tanksPositions.set(tank.uid, {
-  //       x: tank.x / ObjectSize,
-  //       y: tank.y / ObjectSize,
-  //     });
-  //   }
-  // });
-  //const findTargetPosition =
-};
-
 export const bulletPositionAtRunTime = (bullet: Bullet) => {
   const _runTime = new Date().getTime();
   const minusTime = _runTime - bullet.time ?? 0;
@@ -126,6 +119,8 @@ export const bulletPositionAtRunTime = (bullet: Bullet) => {
       return { ...initPosition(bullet.x - change, bullet.y), time: _runTime };
     case "RIGHT":
       return { ...initPosition(bullet.x + change, bullet.y), time: _runTime };
+    default:
+      return { ...initPosition(bullet.x, bullet.y), time: _runTime };
   }
 };
 
@@ -243,12 +238,21 @@ export const checkTanksCanShootNow = (
 ) => {
   const myPosition = mapIndexOnMapMatch({ x: myTank.x, y: myTank.y });
   const events: Array<{ eventName: string; data?: any }> = [];
-  tanks.forEach((tank) => {
-    if (
-      tank.uid !== myTank.uid &&
-      isShootArea(tank, myTank) &&
-      !checkBlockShoot(map, tank, myTank)
-    ) {
+  const tanksList = Array.from(tanks.values())
+    .filter((tank) => tank.name !== MY_NAME)
+    .sort((a, b) => {
+      const aPosition = euclideanDistance(
+        { x: a.x, y: a.y },
+        { x: myTank.x, y: myTank.y }
+      );
+      const bPosition = euclideanDistance(
+        { x: b.x, y: b.y },
+        { x: myTank.x, y: myTank.y }
+      );
+      return aPosition - bPosition;
+    });
+  tanksList.forEach((tank) => {
+    if (isShootArea(tank, myTank) && !isReborn.has(tank.name)) {
       const position = mapIndexOnMapMatch({ x: tank.x, y: tank.y });
       if (checkTargetOnMapIndex(map, myPosition, position)) {
         const orientTargetTank = tankPositionWithMyTank(tank, myTank);
@@ -258,15 +262,10 @@ export const checkTanksCanShootNow = (
         if (orientTargetTank === myTank.orient) {
           events.push({ eventName: EmitEvent.Shoot });
         } else {
-          events.push(
-            {
-              eventName: EmitEvent.Move,
-              data: orientTargetTank,
-            },
-            {
-              eventName: EmitEvent.Shoot,
-            }
-          );
+          events.push({
+            eventName: EmitEvent.Move,
+            data: orientTargetTank,
+          });
         }
       }
     }
@@ -317,6 +316,19 @@ export const bulletPositionAtPlustime = (bullet: Bullet, ms: number) => {
   }
 };
 
+export const tankPositionAtNextTime = (tank: Position, orient: Orient) => {
+  switch (orient) {
+    case "DOWN":
+      return initPosition(tank.x, tank.y + TankSpeed);
+    case "LEFT":
+      return initPosition(tank.x - TankSpeed, tank.y);
+    case "RIGHT":
+      return initPosition(tank.x + TankSpeed, tank.y);
+    case "UP":
+      return initPosition(tank.x, tank.y - TankSpeed);
+  }
+};
+
 export const tankAtNextTime = (tank: Tank, orient: Orient) => {
   switch (orient) {
     case "DOWN":
@@ -330,20 +342,20 @@ export const tankAtNextTime = (tank: Tank, orient: Orient) => {
   }
 };
 
-export const positionInSideTank = (
+export const positionInsideSafeAreaTank = (
   tankPosition: Position,
   checkPosition: Position
 ) => {
   return (
     _.inRange(
-      checkPosition.x,
-      tankPosition.x - TankSize * 2 - BulletSize * 2,
-      tankPosition.x + TankSize * 2 + BulletSize * 2
+      checkPosition?.x ?? 0,
+      tankPosition.x - TankSize * 4 - BulletSize * 2,
+      tankPosition.x + TankSize * 4 + BulletSize * 2
     ) &&
     _.inRange(
-      checkPosition.y,
-      tankPosition.y - TankSize * 2 - BulletSize * 2,
-      tankPosition.y + TankSize * 2 + BulletSize * 2
+      checkPosition?.y ?? 0,
+      tankPosition.y - TankSize * 4 - BulletSize * 2,
+      tankPosition.y + TankSize * 4 + BulletSize * 2
     )
   );
 };

@@ -9,11 +9,22 @@ import {
   SERVER_4,
   TankTimeSpeed,
   Token,
+} from "./constants";
+import {
+  saveMap,
+  saveTanks,
+  saveBullets,
+  bullets,
+  tanks,
+  isReboring,
+  clearIsReboring,
+  myTank,
+  tanksId,
   resetMovePromise,
   resolveMovePromise,
   resolveStartPromise,
-} from "./constants";
-import { saveMap, saveTanks, saveBullets, bullets, tanks } from "./store";
+  saveIsMoveAble,
+} from "./store";
 
 const socket = io(process?.env?.SOCKET_SERVER ?? SERVER_2, {
   auth: {
@@ -29,8 +40,10 @@ export const shoot = () => {
 
 export const moveTank = (orient: Orient) => {
   resetMovePromise();
+  saveIsMoveAble(false);
   setTimeout(() => {
     resolveMovePromise(true);
+    saveIsMoveAble(true);
   }, TankTimeSpeed);
   socket.emit(EmitEvent.Move, { orient });
 };
@@ -72,19 +85,30 @@ socket.on(
     bullet: Bullet;
     tanks: Array<Tank>;
   }) => {
-    tanks.delete(data?.killed?.uid);
+    tanks.delete(data?.killed?.name);
     saveTanks([...data.tanks, data?.killer]);
     if (data.bullet) {
       bullets.delete(data.bullet?.id);
     }
+    isReboring(data?.killed?.name);
+    setTimeout(() => {
+      clearIsReboring(data?.killed?.name);
+    }, 2500);
     if (data.killed?.name === MY_NAME) {
-      console.log('KILLED', data.bullet);
+      console.log("KILLED", data.bullet);
+      console.log("LOCAL", myTank);
+      // console.log("SOCKET", data.killed);
     }
     // saveTanks([data.killer]);
   }
 );
 
 socket.on(Events.Shoot, (data: Bullet) => {
+  const name = tanksId.get(data.uid);
+  const tank = tanks.get(name ?? "");
+  if (tank) {
+    saveTanks([{ ...tank, x: data.x, y: data.y }]);
+  }
   saveBullets([{ ...data, time: new Date().getTime() }]);
 });
 

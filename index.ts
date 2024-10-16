@@ -1,31 +1,46 @@
 import {
   EmitEvent,
+  MY_NAME,
   TankSize,
   TankSpeed,
   TankTimeSpeed,
-  isShootAble,
-  movePromise,
-  startPromise,
 } from "./constants";
 import { joinMatch, moveTank, shoot } from "./connect";
 import {
   bulletPositionAtPlustime,
-  bulletPositionAtRunTime,
   checkTanksCanShootNow,
+  euclideanDistance,
   moveVisible,
-  positionInSideTank,
   sleep,
-  sortBulletWithMyTank,
   tankAtNextTime,
 } from "./utils";
 import {
-  clearBulletNotWorking,
+  addDodgeRoadChecked,
+  bulletInsideTankHorizontal,
+  bulletInsideTankVertical,
+  bullets,
+  checkBulletInsideTank,
+  checkTankPositionIsObject,
+  clearDedgeRoad,
+  dodgeBullets,
+  dodgeRoad,
+  dodgeRoadChecked,
+  hasObjectPosition,
+  isDodgeAble,
+  isShootAble,
   mapMatch,
+  movePromise,
   myTank,
-  startIntervalToCheckBullet,
+  objectPosition,
+  startPromise,
   tanks,
+  tanksId,
 } from "./store";
 import * as _ from "lodash";
+import {
+  startIntervalToCheckBullet,
+  startTrickShootSystem,
+} from "./tankSystem";
 
 const shootNow = async () => {
   if (!isShootAble) {
@@ -35,10 +50,11 @@ const shootNow = async () => {
   for (const event of canShootEvents) {
     if (event.eventName === EmitEvent.Move) {
       moveTank(event.data);
-      await movePromise;
-    }
-    if (event.eventName === EmitEvent.Shoot) {
       shoot();
+      await movePromise;
+    } else {
+      shoot();
+      return;
     }
   }
 };
@@ -46,140 +62,83 @@ const shootNow = async () => {
 const main = async () => {
   await startPromise;
   while (true) {
-    if (myTank) {
-      clearBulletNotWorking();
-      const orientList = moveVisible(mapMatch, myTank);
-      //TODO TEST
-      let orientTest = orientList[
-        Math.floor(Math.random() * orientList.length)
-      ] as any;
-      for (
-        let i = 0;
-        i <= Math.floor(Math.random() * Math.floor(300 / TankSpeed) + 20);
-        i++
-      ) {
-        if (isShootAble) {
-          await shootNow();
-        }
-        const _orientList = moveVisible(mapMatch, myTank);
-        if (!_orientList.includes(orientTest)) {
-          orientTest = _orientList[
-            Math.floor(Math.random() * _orientList.length)
-          ] as any;
-        }
-        const checkBulletsAtOrient: any = _orientList.reduce(
-          (prev, v) => ({ ...prev, [v]: v }),
-          {}
-        );
-        //TODO: Ne dan
-        const _bullets = sortBulletWithMyTank(myTank);
-        if (_bullets.length) {
-          const nextPosition = _orientList.map((v) => tankAtNextTime(myTank!, v));
-          for (let bullet of _bullets) {
-            const position = bulletPositionAtPlustime(bullet, TankTimeSpeed);
-            nextPosition.forEach((v, i) => {
-              if (positionInSideTank(v, position)) {
-                // trung dan
-                delete checkBulletsAtOrient?.[_orientList?.[i]];
+    try {
+      if (myTank) {
+        const orientList = moveVisible(mapMatch, myTank);
+        //TODO TEST
+        let orientTest = orientList[
+          Math.floor(Math.random() * orientList.length)
+        ] as any;
+        for (
+          let i = 0;
+          i <= Math.floor(Math.random() * Math.floor(300 / TankSpeed) + 20);
+          i++
+        ) {
+          const _orientList = moveVisible(mapMatch, myTank);
+          if (!_orientList.includes(orientTest)) {
+            orientTest = _orientList[
+              Math.floor(Math.random() * _orientList.length)
+            ] as any;
+          }
+          clearDedgeRoad();
+          const currentPosition = {
+            x: myTank.x,
+            y: myTank.y,
+            origin: myTank.orient,
+          };
+          addDodgeRoadChecked(currentPosition as never);
+          const dodge = dodgeBullets(
+            { x: myTank.x, y: myTank.y, orient: myTank.orient },
+            Array.from(bullets.values()).filter((v) => {
+              const name = tanksId.get(v.uid);
+              if (name === MY_NAME) {
+                return false;
               }
-            });
+              return true;
+            }),
+            0,
+            0
+          );
+          if (dodge && dodgeRoad.length) {
+            for (const road of dodgeRoad) {
+              if (!road.orient) {
+                continue;
+              }
+              for (let i = 0; i < road.count; i++) {
+                moveTank(road.orient);
+                orientTest = road.orient;
+                await movePromise;
+              }
+            }
+            dodgeRoadChecked.delete(JSON.stringify(currentPosition));
+            continue;
+          }
+          const nextPosition = tankAtNextTime(myTank, orientTest);
+          let canMoveNextPosition = true;
+          bullets.forEach((bullet) => {
+            const position = bulletPositionAtPlustime(bullet, TankTimeSpeed);
+            const name = tanksId.get(bullet.uid);
+            if (name === MY_NAME) {
+              return;
+            }
+            if (checkBulletInsideTank(nextPosition, position)) {
+              canMoveNextPosition = false;
+            }
+          });
+          if (canMoveNextPosition) {
+            moveTank(orientTest);
+            await movePromise;
+          }
+          if (isShootAble) {
+            await shootNow();
           }
         }
-        if (!checkBulletsAtOrient?.[orientTest] && Object.values(checkBulletsAtOrient ?? {}).length) {
-          console.log('CHECKED', orientTest, Object.values(checkBulletsAtOrient ?? {}));
-          moveTank(Object.values(checkBulletsAtOrient ?? {})?.[0] as never);
-          await movePromise;
-          moveTank(Object.values(checkBulletsAtOrient ?? {})?.[0] as never);
-          await movePromise;
-          continue;
-        }
-        moveTank(orientTest);
-        await movePromise;
       }
+    } catch (e) {
+    } finally {
+      await sleep(3);
     }
-    await sleep(3);
   }
-
-  // while (true) {
-  //   if (isFinish) {
-  //     continue;
-  //   }
-  //   if (myTank) {
-  //     const orientList = moveVisible(mapMatch, myTank);
-  //     let orientVisible = orientList.concat();
-  //     for (const bullet of Array.from(bullets.values())) {
-  //       const position = bulletPositionAtRunTime(bullet);
-  //       const bulletMapIndex = initPosition(
-  //         position.x / ObjectSize,
-  //         position.y / ObjectSize
-  //       );
-  //       const mapIndex = mapIndexOnMapMatch({ x: myTank.x, y: myTank.y });
-  //       //REMOVE ORIENT VISIBLE
-  //       if (
-  //         (bulletMapIndex.x === mapIndex.startX ||
-  //           bulletMapIndex.x === mapIndex.endX) &&
-  //         (bulletMapIndex.y + 2 > mapIndex.startY ||
-  //           bulletMapIndex.y + 2 > mapIndex.startY)
-  //       ) {
-  //         //REMOVE DOWN VISIBLE
-  //         orientVisible = orientVisible.filter((v) => v !== "DOWN");
-  //       } else if (
-  //         (bulletMapIndex.x === mapIndex.startX ||
-  //           bulletMapIndex.x === mapIndex.endX) &&
-  //         (bulletMapIndex.y - 2 < mapIndex.startY ||
-  //           bulletMapIndex.y - 2 < mapIndex.startY)
-  //       ) {
-  //         //REMOVE UP VISIBLE
-  //         orientVisible = orientVisible.filter((v) => v !== "UP");
-  //       } else if (
-  //         (bulletMapIndex.x + 2 > mapIndex.startX ||
-  //           bulletMapIndex.x + 2 > mapIndex.endX) &&
-  //         (bulletMapIndex.y === mapIndex.startY ||
-  //           bulletMapIndex.y === mapIndex.startY)
-  //       ) {
-  //         //REMOVE RIGHT VISIBLE
-  //         orientVisible = orientVisible.filter((v) => v !== "RIGHT");
-  //       } else if (
-  //         (bulletMapIndex.x - 2 < mapIndex.startX ||
-  //           bulletMapIndex.x - 2 < mapIndex.endX) &&
-  //         (bulletMapIndex.y === mapIndex.startY ||
-  //           bulletMapIndex.y === mapIndex.startY)
-  //       ) {
-  //         //REMOVE LEFT VISIBLE
-  //         orientVisible = orientVisible.filter((v) => v !== "LEFT");
-  //       }
-  //     }
-  //     if (orientList.length !== orientVisible.length && orientVisible.length) {
-  //       //Tranh dan
-  //       moveTank(orientVisible[0]);
-  //       moveTank(orientVisible[0]);
-  //       continue;
-  //     }
-  //     const canShootEvents = checkTanksCanShootNow(mapMatch, tanks, myTank);
-  //     for (const event of canShootEvents) {
-  //       if (event.eventName === EmitEvent.Move) {
-  //         moveTank(event.data);
-  //       }
-  //       await sleep(17);
-  //       if (event.eventName === EmitEvent.Shoot) {
-  //         shoot();
-  //       }
-  //     }
-  //     if (
-  //       !comparePostions(prevPosition, { x: myTank.x, y: myTank.y }) ||
-  //       prevOrient !== myTank.orient
-  //     ) {
-  //       // const orientVisible = moveVisible(mapMatch, myTank);
-  //       // prevPosition.x = myTank.x;
-  //       // prevPosition.y = myTank.y;
-  //       // if (orientVisible.length) {
-  //       //   moveTank(orientVisible?.[0]);
-  //       //   clearBulletNotWorking();
-  //       // }
-  //     }
-  //   }
-  //   clearBulletNotWorking();
-  // }
 };
 
 joinMatch();
@@ -187,3 +146,5 @@ joinMatch();
 main();
 
 startIntervalToCheckBullet();
+
+startTrickShootSystem();
