@@ -24,9 +24,11 @@ import {
   resolveMovePromise,
   resolveStartPromise,
   saveIsMoveAble,
+  dodgeRoad,
+  dodgeRoadChecked,
 } from "./store";
 
-const socket = io(process?.env?.SOCKET_SERVER ?? SERVER_2, {
+const socket = io(process?.env?.SOCKET_SERVER ?? SERVER_3, {
   auth: {
     token: Token,
   },
@@ -93,8 +95,10 @@ socket.on(
     isReboring(data?.killed?.name);
     setTimeout(() => {
       clearIsReboring(data?.killed?.name);
-    }, 2500);
+    }, 2800);
     if (data.killed?.name === MY_NAME) {
+      console.log(dodgeRoad);
+      console.log(dodgeRoadChecked);
       console.log("KILLED", data.bullet);
       console.log("LOCAL", myTank);
       // console.log("SOCKET", data.killed);
@@ -114,6 +118,7 @@ socket.on(Events.Shoot, (data: Bullet) => {
 
 socket.on(Events.UserDisconnect, (data: string) => {
   //
+  joinMatch();
 });
 
 socket.on(Events.Finish, () => {

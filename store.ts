@@ -10,6 +10,7 @@ import {
 import {
   bulletPositionAtPlustime,
   bulletPositionAtRunTime,
+  euclideanDistance,
   initPosition,
   tankPositionAtNextTime,
 } from "./utils";
@@ -583,7 +584,13 @@ export const dodgeBullets = (
     }
     return true;
   });
-  for (const bullet of bulletUnblock) {
+
+  const bulletInsideSafeArea = bulletUnblock.filter(
+    (bullet) =>
+      euclideanDistance(tankPosition, bulletPositionAtPlustime(bullet, ms)) <
+      TankSize * 3
+  );
+  for (const bullet of bulletInsideSafeArea) {
     if (bullet.uid === myTank?.uid) {
       continue;
     }

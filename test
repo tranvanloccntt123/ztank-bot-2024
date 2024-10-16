@@ -1,1 +1,59 @@
-hackaton-1197452:~/hackaton%7Bmaster%7D$%20npm%20start%0A%0A%3E%20hackaton@1.0.0%20start%0A%3E%20npx%20tsx%20index.ts%0A%0ASave%20Done%0A%7B%0A%20%20x:%20320,%0A%20%20y:%20180,%0A%20%20speed:%203,%0A%20%20type:%201,%0A%20%20uid:%20'RbOqBNNYcXzODy6eAAYA',%0A%20%20orient:%20'UP',%0A%20%20isAlive:%20true,%0A%20%20size:%2033,%0A%20%20name:%20'The%20Fool',%0A%20%20shootable:%20true,%0A%20%20movable:%20true,%0A%20%20shootCooldown:%200,%0A%20%20invulnerable:%20false,%0A%20%20protectCooldown:%200,%0A%20%20score:%200,%0A%20%20streak:%200,%0A%20%20bounty:%200,%0A%20%20color:%200%0A%7D%0A%7B%0A%20%20x:%20320,%0A%20%20y:%20180,%0A%20%20speed:%203,%0A%20%20type:%201,%0A%20%20uid:%20'RbOqBNNYcXzODy6eAAYA',%0A%20%20orient:%20'UP',%0A%20%20isAlive:%20true,%0A%20%20size:%2033,%0A%20%20name:%20'The%20Fool',%0A%20%20shootable:%20true,%0A%20%20movable:%20true,%0A%20%20shootCooldown:%200,%0A%20%20invulnerable:%20false,%0A%20%20protectCooldown:%200,%0A%20%20score:%200,%0A%20%20streak:%200,%0A%20%20bounty:%200,%0A%20%20color:%200%0A%7D%0A%7B%0A%20%20x:%20320,%0A%20%20y:%20180,%0A%20%20speed:%203,%0A%20%20type:%201,%0A%20%20uid:%20'RbOqBNNYcXzODy6eAAYA',%0A%20%20orient:%20'UP',%0A%20%20isAlive:%20true,%0A%20%20size:%2033,%0A%20%20name:%20'The%20Fool',%0A%20%20shootable:%20true,%0A%20%20movable:%20true,%0A%20%20shootCooldown:%200,%0A%20%20invulnerable:%20false,%0A%20%20protectCooldown:%200,%0A%20%20score:%200,%0A%20%20streak:%200,%0A%20%20bounty:%200,%0A%20%20color:%200%0A%7D%0A%7B%0A%20%20x:%20317,%0A%20%20y:%20180,%0A%20%20speed:%203,%0A%20%20type:%201,%0A%20%20uid:%20'RbOqBNNYcXzODy6eAAYA',%0A%20%20orient:%20'LEFT',%0A%20%20isAlive:%20true,%0A%20%20size:%2033,%0A%20%20name:%20'The%20Fool',%0A%20%20shootable:%20true,%0A%20%20movable:%20false,%0A%20%20shootCooldown:%200,%0A%20%20invulnerable:%20false,%0A%20%20protectCooldown:%200,%0A%20%20score:%200,%0A%20%20streak:%200,%0A%20%20bounty:%200,%0A%20%20color:%200%0A%7D%0Ahackaton-1197452:~/hackaton%7Bmaster%7D$%20%5EC%0Ahackaton-1197452:~/hackaton%7Bmaster%7D$%20
+[
+  { orient: 'UP', count: 1 },
+  { orient: 'DOWN', count: 1 },
+  { orient: 'DOWN', count: 1 },
+  { orient: 'UP', count: 1 },
+  { orient: 'LEFT', count: 1 },
+  { orient: 'DOWN', count: 1 },
+  { orient: 'DOWN', count: 1 },
+  { orient: 'DOWN', count: 1 },
+  { orient: 'DOWN', count: 1 },
+  { orient: 'DOWN', count: 1 },
+  { orient: 'DOWN', count: 1 },
+  { orient: 'DOWN', count: 1 }
+]
+Set(13) {
+  '396-485-undefined',
+  '396-482-UP',
+  '396-485-DOWN',
+  '396-488-DOWN',
+  '396-485-UP',
+  '393-485-LEFT',
+  '393-488-DOWN',
+  '393-491-DOWN',
+  '393-494-DOWN',
+  '393-497-DOWN',
+  '393-500-DOWN',
+  '393-503-DOWN',
+  '393-506-DOWN'
+}
+KILLED {
+  x: 428.5,
+  y: 495.5,
+  orient: 'LEFT',
+  speed: 4,
+  type: 1,
+  size: 8,
+  uid: 'OXshj6-aqA8WiRcdAANn',
+  id: 182500
+}
+LOCAL {
+  x: 396,
+  y: 485,
+  speed: 3,
+  type: 1,
+  uid: 'yjXhGcj2VyK3rlZXAATW',
+  orient: 'RIGHT',
+  isAlive: false,
+  size: 33,
+  name: 'The Fool',
+  shootable: false,
+  movable: true,
+  shootCooldown: 17,
+  invulnerable: false,
+  protectCooldown: 0,
+  score: 200,
+  streak: 20,
+  bounty: 57,
+  color: 1
+}

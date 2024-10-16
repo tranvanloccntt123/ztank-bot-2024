@@ -74,12 +74,6 @@ const main = async () => {
           i <= Math.floor(Math.random() * Math.floor(300 / TankSpeed) + 20);
           i++
         ) {
-          const _orientList = moveVisible(mapMatch, myTank);
-          if (!_orientList.includes(orientTest)) {
-            orientTest = _orientList[
-              Math.floor(Math.random() * _orientList.length)
-            ] as any;
-          }
           clearDedgeRoad();
           const currentPosition = {
             x: myTank.x,
@@ -112,6 +106,12 @@ const main = async () => {
             }
             dodgeRoadChecked.delete(JSON.stringify(currentPosition));
             continue;
+          }
+          const _orientList = moveVisible(mapMatch, myTank);
+          if (!_orientList.includes(orientTest)) {
+            orientTest = _orientList[
+              Math.floor(Math.random() * _orientList.length)
+            ] as any;
           }
           const nextPosition = tankAtNextTime(myTank, orientTest);
           let canMoveNextPosition = true;
