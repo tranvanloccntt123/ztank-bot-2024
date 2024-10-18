@@ -1,5 +1,3 @@
-import { initPosition } from "./utils";
-
 export const EmitEvent = {
   Join: "join",
   Move: "move",
@@ -46,7 +44,7 @@ export const TankSpeed: number = 3;
 
 export const BulletSpeed: number = 4;
 
-export const TankTimeSpeed: number = 17; //ms
+export const TankTimeSpeed: number = 18; //ms
 
 export const BulletTimeSpeed: number = 17; //ms
 
@@ -55,6 +53,8 @@ export const BulletSize = 8;
 export const ShootAbleTime = 1020;
 
 export const ShootAreaSize = 20;
+
+export const ShootArea = 33 / 3 * 17 - 3;
 
 export const MapSize = {
   width: 900,

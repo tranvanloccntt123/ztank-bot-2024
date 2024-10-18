@@ -1,0 +1,170 @@
+[
+  {
+    orient: 'UP',
+    count: 1,
+    tankPosition: { x: 137, y: 417, orient: 'UP' },
+    bulletPosition: { x: 169.5, y: 292.32352941176856, orient: 'DOWN' }
+  },
+  {
+    orient: 'UP',
+    count: 1,
+    tankPosition: { x: 137, y: 414, orient: 'UP' },
+    bulletPosition: { x: 169.5, y: 296.32352941176856, orient: 'DOWN' }
+  },
+  {
+    orient: 'UP',
+    count: 1,
+    tankPosition: { x: 137, y: 411, orient: 'UP' },
+    bulletPosition: { x: 169.5, y: 300.32352941176856, orient: 'DOWN' }
+  },
+  {
+    orient: 'UP',
+    count: 1,
+    tankPosition: { x: 137, y: 408, orient: 'UP' },
+    bulletPosition: { x: 169.5, y: 304.32352941176856, orient: 'DOWN' }
+  },
+  {
+    orient: 'UP',
+    count: 1,
+    tankPosition: { x: 137, y: 405, orient: 'UP' },
+    bulletPosition: { x: 169.5, y: 308.32352941176856, orient: 'DOWN' }
+  },
+  {
+    orient: 'UP',
+    count: 1,
+    tankPosition: { x: 137, y: 402, orient: 'UP' },
+    bulletPosition: { x: 169.5, y: 312.32352941176856, orient: 'DOWN' }
+  },
+  {
+    orient: 'UP',
+    count: 1,
+    tankPosition: { x: 137, y: 399, orient: 'UP' },
+    bulletPosition: { x: 169.5, y: 316.32352941176856, orient: 'DOWN' }
+  },
+  {
+    orient: 'UP',
+    count: 1,
+    tankPosition: { x: 137, y: 396, orient: 'UP' },
+    bulletPosition: { x: 169.5, y: 320.32352941176856, orient: 'DOWN' }
+  },
+  {
+    orient: 'UP',
+    count: 1,
+    tankPosition: { x: 137, y: 393, orient: 'UP' },
+    bulletPosition: { x: 169.5, y: 324.32352941176856, orient: 'DOWN' }
+  },
+  {
+    orient: 'UP',
+    count: 1,
+    tankPosition: { x: 137, y: 390, orient: 'UP' },
+    bulletPosition: { x: 169.5, y: 328.32352941176856, orient: 'DOWN' }
+  },
+  {
+    orient: 'UP',
+    count: 1,
+    tankPosition: { x: 137, y: 387, orient: 'UP' },
+    bulletPosition: { x: 169.5, y: 332.32352941176856, orient: 'DOWN' }
+  },
+  {
+    orient: 'UP',
+    count: 1,
+    tankPosition: { x: 137, y: 384, orient: 'UP' },
+    bulletPosition: { x: 169.5, y: 336.32352941176856, orient: 'DOWN' }
+  },
+  {
+    orient: 'UP',
+    count: 1,
+    tankPosition: { x: 137, y: 381, orient: 'UP' },
+    bulletPosition: { x: 169.5, y: 340.32352941176856, orient: 'DOWN' }
+  },
+  {
+    orient: 'UP',
+    count: 1,
+    tankPosition: { x: 137, y: 378, orient: 'UP' },
+    bulletPosition: { x: 169.5, y: 344.32352941176856, orient: 'DOWN' }
+  },
+  {
+    orient: 'UP',
+    count: 1,
+    tankPosition: { x: 137, y: 375, orient: 'UP' },
+    bulletPosition: { x: 169.5, y: 348.32352941176856, orient: 'DOWN' }
+  },
+  {
+    orient: 'UP',
+    count: 1,
+    tankPosition: { x: 137, y: 372, orient: 'UP' },
+    bulletPosition: { x: 251.38235294115674, y: 367.5, orient: 'LEFT' }
+  },
+  {
+    orient: 'UP',
+    count: 1,
+    tankPosition: { x: 137, y: 369, orient: 'UP' },
+    bulletPosition: { x: 247.38235294115674, y: 367.5, orient: 'LEFT' }
+  },
+  {
+    orient: 'UP',
+    count: 1,
+    tankPosition: { x: 137, y: 366, orient: 'UP' },
+    bulletPosition: { x: 243.38235294115674, y: 367.5, orient: 'LEFT' }
+  },
+  {
+    orient: 'DOWN',
+    count: 1,
+    tankPosition: { x: 137, y: 369, orient: 'DOWN' },
+    bulletPosition: { x: 239.38235294115674, y: 367.5, orient: 'LEFT' }
+  },
+  {
+    orient: 'DOWN',
+    count: 1,
+    tankPosition: { x: 137, y: 372, orient: 'DOWN' },
+    bulletPosition: { x: 235.38235294115674, y: 367.5, orient: 'LEFT' }
+  },
+  {
+    orient: 'DOWN',
+    count: 1,
+    tankPosition: { x: 137, y: 375, orient: 'DOWN' },
+    bulletPosition: { x: 231.38235294115674, y: 367.5, orient: 'LEFT' }
+  },
+  {
+    orient: 'LEFT',
+    count: 1,
+    tankPosition: { x: 134, y: 375, orient: 'LEFT' },
+    bulletPosition: { x: 227.38235294115674, y: 367.5, orient: 'LEFT' }
+  },
+  {
+    orient: 'DOWN',
+    count: 1,
+    tankPosition: { x: 134, y: 378, orient: 'DOWN' },
+    bulletPosition: { x: 223.38235294115674, y: 367.5, orient: 'LEFT' }
+  }
+]
+KILLED {
+  x: 169.5,
+  y: 377.5,
+  orient: 'DOWN',
+  speed: 4,
+  type: 1,
+  size: 8,
+  uid: 'yVATgaV9tvd5WjhDAAAF',
+  id: 27231
+}
+LOCAL {
+  x: 143,
+  y: 384,
+  speed: 3,
+  type: 1,
+  uid: 'CsqJPa9mlLg9ISc7AAJl',
+  orient: 'UP',
+  isAlive: false,
+  size: 33,
+  name: 'The Fool',
+  shootable: true,
+  movable: true,
+  shootCooldown: 0,
+  invulnerable: false,
+  protectCooldown: 0,
+  score: 66,
+  streak: 6,
+  bounty: 15,
+  color: 1
+}

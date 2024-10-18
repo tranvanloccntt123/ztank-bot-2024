@@ -8,7 +8,7 @@
       "forceConsistentCasingInFileNames": true,
       "outDir": "./dist"
     },
-    "include": ["*.ts"],
+    "include": ["*.ts", "unitTest/test.ts", "unitTest/mapTest.ts"],
     "exclude": ["node_modules"],
     "ts-node": {
       "esm": true,

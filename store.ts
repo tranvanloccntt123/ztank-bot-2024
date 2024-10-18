@@ -3,13 +3,15 @@ import {
   MY_NAME,
   MapSize,
   ObjectSize,
-  TankSize,
-  TankSpeed,
   TankTimeSpeed,
 } from "./constants";
+import { runSystem, stopIntervalRunning } from "./tankSystem";
 import {
   bulletPositionAtPlustime,
   bulletPositionAtRunTime,
+  checkBulletInsideTank,
+  checkBulletRunningToTank,
+  checkTankPositionIsObject,
   euclideanDistance,
   initPosition,
   tankPositionAtNextTime,
@@ -48,6 +50,8 @@ export let resolveMovePromise: any = null;
 
 export let resolveJoiningPromise: any = null;
 
+export let resolveRunningPromise: any = null;
+
 export let isShootAble: boolean = true;
 
 export let isMoveAble: boolean = true;
@@ -55,6 +59,28 @@ export let isMoveAble: boolean = true;
 export let isDodgeAble: boolean = false;
 
 export let isJoinning: boolean = false;
+
+export let targetTankUID: string = "";
+
+/*
+  Priority:
+  - 0: dodge
+  - 1: shoot
+  - 2: normal
+*/
+export const MovePriority = {
+  DODGE: 0,
+  SHOOT: 1,
+  NORMAL: 2,
+};
+
+export let road: {
+  priority: number;
+  data: Array<Orient>;
+} = {
+  priority: 3,
+  data: [],
+};
 
 export let startPromise = new Promise<boolean>(
   (resolve) => (resolveStartPromise = resolve)
@@ -72,10 +98,72 @@ export let joiningPromise = new Promise<boolean>(
   (resolve) => (resolveJoiningPromise = resolve)
 );
 
+export let runningPromise = new Promise<boolean>(
+  (resolve) => (resolveRunningPromise = resolve)
+);
+
 export const resetMovePromise = () => {
   movePromise = new Promise<boolean>(
     (resolve) => (resolveMovePromise = resolve)
   );
+};
+
+export const resetRunningPromise = () => {
+  runningPromise = new Promise<boolean>(
+    (resolve) => (resolveRunningPromise = resolve)
+  );
+};
+
+export const clearRoad = () => {
+  road.priority = 3;
+  road.data = [];
+  stopIntervalRunning();
+};
+
+export const findTargetTank = () => {
+  if (myTank && myTank.x && myTank.y && tanks.size) {
+    const _tanks = Array.from(tanks.values())
+      .filter((tank) => tank.name !== MY_NAME)
+      .sort((a, b) => {
+        const aPosition = euclideanDistance(
+          { x: a.x, y: a.y },
+          { x: myTank!.x, y: myTank!.y }
+        );
+        const bPosition = euclideanDistance(
+          { x: b.x, y: b.y },
+          { x: myTank!.x, y: myTank!.y }
+        );
+        if (aPosition === bPosition && a.streak > b.streak) {
+          return -1;
+        }
+        return aPosition - bPosition;
+      });
+    if (_tanks.length) {
+      saveTargetTankUID(_tanks[0].uid);
+    }
+  }
+};
+
+export const saveTargetTankUID = (uid: string) => {
+  targetTankUID = uid;
+};
+
+export const saveRoad = (priority: number, data: Array<Orient>) => {
+  try {
+    if (priority < road.priority) {
+      stopIntervalRunning();
+      road.priority = priority;
+      road.data = data.concat();
+      runSystem(road);
+    } else if (!Boolean(road.data.length)) {
+      stopIntervalRunning();
+      road.priority = priority;
+      road.data = data.concat();
+      runSystem(road);
+    }
+  } catch (e) {
+    console.log(e);
+  }
 };
 
 export const saveIsJoinning = (_v: boolean) => (isJoinning = _v);
@@ -145,17 +233,19 @@ export const saveMap = (map: MapMatch) => {
 
 export const saveTanks = (_tanks: Array<Tank>) => {
   _tanks.forEach((tank) => {
-    tanks.set(tank?.name, tank);
-    if (tank.name === MY_NAME) {
-      myTank = tank;
-      saveIsShootAble(tank.shootable);
+    if (tank.x && tank.y) {
+      tanks.set(tank?.name, tank);
+      if (tank.name === MY_NAME) {
+        myTank = tank;
+        saveIsShootAble(tank.shootable);
+      }
     }
   });
 };
 
 export const saveBullets = (_bullets: Array<Bullet>) => {
   _bullets.forEach((bullet) => {
-    if (bullet.uid !== myTank?.uid) {
+    if (bullet.uid !== myTank?.uid && bullet.x && bullet.y) {
       bullets.set(bullet.id, bullet);
     }
   });
@@ -234,87 +324,6 @@ LOCAL {
 }
 */
 
-export const bulletInsideTankVertical = (
-  tankPosition: Position,
-  bulletPosition: Position
-) => {
-  return (
-    _.inRange(
-      bulletPosition?.x ?? 0,
-      tankPosition.x - 1,
-      tankPosition.x + TankSize + 2
-    ) ||
-    _.inRange(
-      (bulletPosition?.x ?? 0) + BulletSize,
-      tankPosition.x - 1,
-      tankPosition.x + TankSize + 1 + 2
-    )
-  );
-};
-
-export const bulletInsideTankHorizontal = (
-  tankPosition: Position,
-  bulletPosition: Position
-) => {
-  return (
-    _.inRange(
-      bulletPosition?.y ?? 0,
-      tankPosition.y - 1,
-      tankPosition.y + TankSize + 2
-    ) ||
-    _.inRange(
-      (bulletPosition?.y ?? 0) + BulletSize,
-      tankPosition.y - 1,
-      tankPosition.y + TankSize + 2
-    )
-  );
-};
-
-export const checkTankPositionIsObject = (tankPosition: Position) => {
-  return (
-    hasBlockPosition({
-      x: tankPosition.x,
-      y: tankPosition.y,
-    }) ||
-    hasBlockPosition({
-      x: tankPosition.x + TankSize,
-      y: tankPosition.y,
-    }) ||
-    hasBlockPosition({
-      x: tankPosition.x + TankSize,
-      y: tankPosition.y + TankSize,
-    }) ||
-    hasBlockPosition({
-      x: tankPosition.x,
-      y: tankPosition.y + TankSize,
-    }) ||
-    hasBlockPosition({
-      x: tankPosition.x + TankSize / 2,
-      y: tankPosition.y + TankSize / 2,
-    }) ||
-    hasObjectPosition({
-      x: tankPosition.x,
-      y: tankPosition.y,
-    }) ||
-    hasObjectPosition({
-      x: tankPosition.x + TankSize,
-      y: tankPosition.y,
-    }) ||
-    hasObjectPosition({
-      x: tankPosition.x + TankSize,
-      y: tankPosition.y + TankSize,
-    }) ||
-    hasObjectPosition({
-      x: tankPosition.x,
-      y: tankPosition.y + TankSize,
-    }) ||
-    hasObjectPosition({
-      x: tankPosition.x + TankSize / 2,
-      y: tankPosition.y + TankSize / 2,
-    })
-  );
-};
-
 export const checkBulletInsideBlock = (position: Position) => {
   return (
     hasBlockPosition({
@@ -336,272 +345,126 @@ export const checkBulletInsideBlock = (position: Position) => {
   );
 };
 
-export const checkBulletInsideTank = (
+const orients = ["UP", "DOWN", "RIGHT", "LEFT"];
+
+const unOrients = ["DOWN", "UP", "LEFT", "RIGHT"];
+
+const safeArea = (
   tankPosition: Position,
-  bullet: Position
+  bullets: Array<Bullet>,
+  ms: number
 ) => {
-  if (
-    _.inRange(bullet.x, tankPosition.x - 1, tankPosition.x + TankSize + 2) &&
-    _.inRange(bullet.y, tankPosition.y - 1, tankPosition.y + TankSize + 2)
-  ) {
-    return true;
-  }
-  if (
-    _.inRange(
-      bullet.x + BulletSize,
-      tankPosition.x - 1,
-      tankPosition.x + TankSize + 2
-    ) &&
-    _.inRange(bullet.y, tankPosition.y - 1, tankPosition.y + TankSize + 2)
-  ) {
-    return true;
-  }
-  if (
-    _.inRange(bullet.x, tankPosition.x - 1, tankPosition.x + TankSize + 2) &&
-    _.inRange(
-      bullet.y + BulletSize,
-      tankPosition.y - 1,
-      tankPosition.y + TankSize + 2
-    )
-  ) {
-    return true;
-  }
-  if (
-    _.inRange(
-      bullet.x + BulletSize,
-      tankPosition.x - 1,
-      tankPosition.x + TankSize + 2
-    ) &&
-    _.inRange(
-      bullet.y + BulletSize,
-      tankPosition.y - 1,
-      tankPosition.y + TankSize + 2
-    )
-  ) {
-    return true;
-  }
-  return false;
-};
-
-/*
-{ x: 359.5, y: 191.73529411764778, orient: 'DOWN' } { x: 120, y: 368, orient: 'UP' }
-*/
-
-export const checkBulletRunningToTank = (
-  tankPosition: Position,
-  bulletPosition: Position & { orient: Orient },
-  distance = TankSize * 5
-) => {
-  if (
-    bulletInsideTankVertical(tankPosition, bulletPosition) &&
-    ["DOWN", "UP"].includes(bulletPosition.orient)
-  ) {
-    if (
-      bulletPosition.orient === "DOWN" &&
-      bulletPosition.y <= tankPosition.y &&
-      tankPosition.y - bulletPosition.y < distance
-    ) {
-      return true;
-    }
-    if (
-      bulletPosition.orient === "UP" &&
-      bulletPosition.y >= tankPosition.y &&
-      bulletPosition.y - tankPosition.y < distance
-    ) {
-      return true;
-    }
-    return false;
-  }
-  if (
-    bulletInsideTankHorizontal(tankPosition, bulletPosition) &&
-    ["RIGHT", "LEFT"].includes(bulletPosition.orient)
-  ) {
-    if (
-      bulletPosition.orient === "RIGHT" &&
-      bulletPosition.x <= tankPosition.x &&
-      tankPosition.x - bulletPosition.x < distance
-    ) {
-      return true;
-    }
-    if (
-      bulletPosition.orient === "LEFT" &&
-      bulletPosition.x >= tankPosition.x &&
-      tankPosition.x - bulletPosition.x < distance
-    ) {
-      return true;
-    }
-    return false;
-  }
-  return false;
-};
-
-export const checkBlockBetweenBulletAndTank = (
-  tankPosition: Position,
-  bulletPosition: Position & { orient: Orient }
-) => {
-  if (
-    bulletInsideTankVertical(tankPosition, bulletPosition) &&
-    ["DOWN", "UP"].includes(bulletPosition.orient)
-  ) {
-    if (bulletPosition.orient === "DOWN" && bulletPosition.y < tankPosition.y) {
-      for (
-        let i = parseInt((bulletPosition.y + BulletSize).toString(), 10);
-        i <= parseInt(tankPosition.y.toString(), 10);
-        i += 10
-      ) {
-        if (
-          hasBlockPosition({
-            x: parseInt(bulletPosition.x.toString(), 10),
-            y: i,
-          }) ||
-          hasBlockPosition({
-            x: parseInt((bulletPosition.x + BulletSize).toString(), 10),
-            y: i,
-          })
-        ) {
-          return true;
-        }
-      }
-    }
-    if (bulletPosition.orient === "UP" && bulletPosition.y > tankPosition.y) {
-      for (
-        let i = parseInt((tankPosition.y + TankSize).toString());
-        i <= parseInt(bulletPosition.y.toString());
-        i += 10
-      ) {
-        if (
-          hasBlockPosition({
-            x: parseInt(bulletPosition.x.toString()),
-            y: i,
-          }) ||
-          hasBlockPosition({
-            x: parseInt((bulletPosition.x + BulletSize).toString()),
-            y: i,
-          })
-        ) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-  if (
-    bulletInsideTankHorizontal(tankPosition, bulletPosition) &&
-    ["RIGHT", "LEFT"].includes(bulletPosition.orient)
-  ) {
-    if (
-      bulletPosition.orient === "RIGHT" &&
-      bulletPosition.x < tankPosition.x
-    ) {
-      for (
-        let i = parseInt((bulletPosition.x + BulletSize).toString());
-        i <= parseInt(tankPosition.x.toString());
-        i += 10
-      ) {
-        if (
-          hasBlockPosition({
-            x: i,
-            y: parseInt(bulletPosition.y.toString()),
-          }) ||
-          hasBlockPosition({
-            x: i,
-            y: parseInt((bulletPosition.y + BulletSize).toString()),
-          })
-        ) {
-          return true;
-        }
-      }
-    }
-    if (bulletPosition.orient === "LEFT" && bulletPosition.x > tankPosition.x) {
-      for (
-        let i = parseInt((tankPosition.x + TankSize).toString());
-        i <= parseInt(bulletPosition.x.toString());
-        i += 10
-      ) {
-        if (
-          hasBlockPosition({
-            x: i,
-            y: parseInt(bulletPosition.y.toString()),
-          }) ||
-          hasBlockPosition({
-            x: i,
-            y: parseInt((bulletPosition.y + BulletSize).toString()),
-          })
-        ) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-  return false;
-};
-
-export let dodgeRoad: Array<{ orient: Orient | null; count: number }> = [];
-
-let tmpBullets: Array<Bullet> = [];
-
-export const clearDedgeRoad = (bullets: Array<Bullet>) => {
-  dodgeRoad = [];
-  tmpBullets = bullets;
-};
-
-export const dodgeBullets = (
-  tankPosition: Position & { orient: Orient },
-  ms: number,
-  stepCount: number
-): boolean => {
-  if (
-    tankPosition.x >= 900 ||
-    tankPosition.x < 0 ||
-    tankPosition.y >= 700 ||
-    tankPosition.y < 0
-  ) {
-    return false;
-  }
-  if (stepCount >= 25) {
-    return false;
-  }
-  if (checkTankPositionIsObject(tankPosition)) {
-    return false;
-  }
-  let isSafe = true;
-  for (const bullet of tmpBullets) {
+  for (const bullet of bullets) {
     const bulletPosition = bulletPositionAtPlustime(bullet, ms);
-    if (euclideanDistance(tankPosition, bulletPosition) >= TankSize * 5) {
-      continue;
-    }
-    if (checkBulletInsideBlock(bulletPosition)) {
-      continue;
-    }
-    if (checkBulletInsideTank(tankPosition, bulletPosition)) {
-      return false;
-    }
     if (
       checkBulletRunningToTank(tankPosition, {
         ...bulletPosition,
         orient: bullet.orient,
       })
     ) {
-      isSafe = false;
-      const orients = ["UP", "DOWN", "RIGHT", "LEFT"];
-      for (const i in orients) {
-        const orient = orients[i];
-        const movePosition = {
-          ...tankPositionAtNextTime(tankPosition, orient as never),
-          orient,
-        };
-        const responseUp = dodgeBullets(
-          movePosition as never,
-          ms + TankTimeSpeed,
-          stepCount + 1
-        );
-        if (responseUp) {
-          return responseUp;
+      return false;
+    }
+  }
+  return true;
+};
+
+const checkBulletsInsideTank = (
+  tankPosition: Position,
+  bullets: Array<Bullet>,
+  ms: number
+) => {
+  for (const bullet of bullets) {
+    const bulletPosition = bulletPositionAtPlustime(bullet, ms);
+    if (checkBulletInsideTank(tankPosition, bulletPosition)) {
+      return true;
+    }
+  }
+  return false;
+};
+
+export const revertRoad = (
+  roads: any,
+  tankPosition: Position & {
+    ms: number;
+  }
+) => {
+  const result: Array<any> = [];
+  let unOrient = roads[tankPosition?.y ?? ""][tankPosition?.x ?? ""];
+  let findOrientIndex = unOrients.findIndex((v) => v === unOrient);
+  let prevPosition = tankPositionAtNextTime(tankPosition as never, unOrient);
+  result.unshift({
+    ...prevPosition,
+    orient: orients[findOrientIndex] ?? "null",
+  } as never);
+  while (unOrient !== "ROOT") {
+    unOrient = roads[prevPosition?.y ?? ""][prevPosition?.x ?? ""];
+    findOrientIndex = unOrients.findIndex((v) => v === unOrient);
+    prevPosition = tankPositionAtNextTime(prevPosition as never, unOrient);
+    result.unshift({
+      ...prevPosition,
+      orient: orients[findOrientIndex] ?? "null",
+    } as never);
+  }
+  return result;
+};
+
+export const dodgeBullets = (
+  tankPosition: Position & { orient: Orient },
+  bullets: Array<Bullet>,
+  ms: number
+) => {
+  //make dodge queue
+  let dodgeRoad: any = {
+    [tankPosition.y]: {
+      [tankPosition.x]: "ROOT",
+    },
+  };
+  let isSafe = true;
+  const queue: Array<Position & { ms: number }> = [{ ...tankPosition, ms: ms }];
+  const result: Array<any> = [];
+  while (queue.length) {
+    const tankPosition = queue.shift();
+    if (safeArea(tankPosition as never, bullets, tankPosition?.ms as never)) {
+      //REVERT POSTION
+      result.push(...revertRoad(dodgeRoad, tankPosition as any));
+      break;
+    }
+    isSafe = false;
+    for (let i = 0; i < orients.length; i++) {
+      const orient = orients[i];
+      const moveNextPosition = tankPositionAtNextTime(
+        tankPosition as never,
+        orient as never
+      );
+      if (
+        !checkTankPositionIsObject(moveNextPosition as never) &&
+        !checkBulletsInsideTank(
+          tankPosition as never,
+          bullets,
+          tankPosition!.ms
+        ) &&
+        !(
+          tankPosition!.x >= 848 ||
+          tankPosition!.x < 20 ||
+          tankPosition!.y >= 648 ||
+          tankPosition!.y < 20
+        )
+      ) {
+        if (!dodgeRoad?.[moveNextPosition.y]?.[moveNextPosition.x]) {
+          if (!dodgeRoad?.[moveNextPosition.y]) {
+            dodgeRoad[moveNextPosition.y] = {};
+          }
+          dodgeRoad[moveNextPosition.y][moveNextPosition.x] = unOrients[i];
+          queue.push({
+            ...moveNextPosition,
+            ms: (tankPosition?.ms ?? 0) + TankTimeSpeed,
+          });
         }
-        dodgeRoad.pop();
       }
     }
   }
-  return isSafe;
+  return {
+    isSafe,
+    result,
+  };
 };

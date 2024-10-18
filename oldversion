@@ -17,9 +17,6 @@ export const dodgeBullets = (
     return false;
   }
   for (const bullet of bullets) {
-    if (bullet.uid === myTank?.uid) {
-      continue;
-    }
     const position = bulletPositionAtPlustime(bullet, ms);
     if (checkBulletInsideBlock(position)) {
       continue;

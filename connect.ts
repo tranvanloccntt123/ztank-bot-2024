@@ -5,6 +5,7 @@ import {
   MY_NAME,
   SERVER_1,
   SERVER_2,
+  SERVER_3,
   TankTimeSpeed,
   Token,
 } from "./constants";
@@ -22,21 +23,26 @@ import {
   resolveMovePromise,
   resolveStartPromise,
   saveIsMoveAble,
-  dodgeRoad,
   saveIsJoinning,
   resolveJoiningPromise,
   isJoinning,
 } from "./store";
 
-const socket = io(process?.env?.SOCKET_SERVER ?? SERVER_2, {
+const socket = io(process?.env?.SOCKET_SERVER ?? SERVER_1, {
   auth: {
     token: Token,
   },
+  transports: ["websocket"],
+  // reconnectionDelay: 500,
+  // reconnection: true,
+  // reconnectionDelayMax: 200,
+  upgrade: false,
+  autoConnect: true,
 });
 
 export const joinMatch = () => {
   socket.emit(EmitEvent.Join);
-  saveIsJoinning(true);
+  saveIsJoinning(true);2
 };
 
 export const shoot = () => {
@@ -74,10 +80,7 @@ socket.on(Events.UserJoining, (data: { tank: Tank; tanks: Array<Tank> }) => {
 });
 
 socket.on(Events.Reborn, (data: Tank) => {
-  saveTanks([data]);
-  if (data.name === MY_NAME) {
-    moveTank("DOWN");
-  }
+  // saveTanks([data]);
 });
 
 socket.on(Events.Move, (data: Tank) => {
@@ -101,12 +104,12 @@ socket.on(
     setTimeout(() => {
       clearIsReboring(data?.killed?.name);
     }, 2800);
-    if (data.killed?.name === MY_NAME && dodgeRoad.length) {
-      console.log(dodgeRoad);
+    if (data.killed?.name === MY_NAME) {
       console.log("KILLED", data.bullet);
       console.log("LOCAL", myTank);
       // console.log("SOCKET", data.killed);
     }
+    // saveTanks([data.killed]);
     // saveTanks([data.killer]);
   }
 );
@@ -122,9 +125,15 @@ socket.on(Events.Shoot, (data: Bullet) => {
 
 socket.on(Events.UserDisconnect, (data: string) => {
   //
-  console.log("USER DISCONNECT");
   if (!isJoinning) {
-    joinMatch();
+    if (!myTank) {
+      joinMatch();
+    } else {
+      if (data === myTank?.uid) {
+        console.log("USER DISCONNECT");
+        joinMatch();
+      }
+    }
   }
 });
 
