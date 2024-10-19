@@ -26,9 +26,11 @@ import {
   saveIsJoinning,
   resolveJoiningPromise,
   isJoinning,
+  clearRoad,
+  resolveRunningPromise,
 } from "./store";
 
-const socket = io(process?.env?.SOCKET_SERVER ?? SERVER_1, {
+const socket = io(process?.env?.SOCKET_SERVER ?? SERVER_2, {
   auth: {
     token: Token,
   },
@@ -105,6 +107,7 @@ socket.on(
       clearIsReboring(data?.killed?.name);
     }, 2800);
     if (data.killed?.name === MY_NAME) {
+      clearRoad();
       console.log("KILLED", data.bullet);
       console.log("LOCAL", myTank);
       // console.log("SOCKET", data.killed);

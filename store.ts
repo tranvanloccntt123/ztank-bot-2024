@@ -3,18 +3,20 @@ import {
   MY_NAME,
   MapSize,
   ObjectSize,
+  TankSize,
   TankTimeSpeed,
 } from "./constants";
 import { runSystem, stopIntervalRunning } from "./tankSystem";
 import {
-  bulletPositionAtPlustime,
   bulletPositionAtRunTime,
-  checkBulletInsideTank,
-  checkBulletRunningToTank,
+  safeArea,
+  checkBulletsInsideTank,
   checkTankPositionIsObject,
   euclideanDistance,
   initPosition,
   tankPositionAtNextTime,
+  isSameHorizontalAxisWithSize,
+  isSameVerticalAxisWithSize,
 } from "./utils";
 import * as _ from "lodash";
 
@@ -32,7 +34,15 @@ export let myTank: Tank | null = null;
 
 export let blockPosition: Set<string> = new Set();
 
+export let blockPositionHorizontal: Record<number, Array<number>> = {};
+
+export let blockPositionVertical: Record<number, Array<number>> = {};
+
 export let objectPosition: Set<string> = new Set();
+
+export let objectPositionHorizontal: Record<number, Array<number>> = {};
+
+export let objectPositionVertical: Record<number, Array<number>> = {};
 
 export let isFinish = true;
 
@@ -62,6 +72,8 @@ export let isJoinning: boolean = false;
 
 export let targetTankUID: string = "";
 
+export let loadedMap = false;
+
 /*
   Priority:
   - 0: dodge
@@ -77,9 +89,11 @@ export const MovePriority = {
 export let road: {
   priority: number;
   data: Array<Orient>;
+  index: number;
 } = {
   priority: 3,
   data: [],
+  index: -1,
 };
 
 export let startPromise = new Promise<boolean>(
@@ -117,6 +131,7 @@ export const resetRunningPromise = () => {
 export const clearRoad = () => {
   road.priority = 3;
   road.data = [];
+  road.index = -1;
   stopIntervalRunning();
 };
 
@@ -139,7 +154,7 @@ export const findTargetTank = () => {
         return aPosition - bPosition;
       });
     if (_tanks.length) {
-      saveTargetTankUID(_tanks[0].uid);
+      saveTargetTankUID(_tanks[0].name);
     }
   }
 };
@@ -150,16 +165,18 @@ export const saveTargetTankUID = (uid: string) => {
 
 export const saveRoad = (priority: number, data: Array<Orient>) => {
   try {
-    if (priority < road.priority) {
-      stopIntervalRunning();
-      road.priority = priority;
-      road.data = data.concat();
-      runSystem(road);
-    } else if (!Boolean(road.data.length)) {
-      stopIntervalRunning();
-      road.priority = priority;
-      road.data = data.concat();
-      runSystem(road);
+    if (data.length) {
+      if (priority < road.priority) {
+        resetRunningPromise();
+        road.priority = priority;
+        road.data = data.concat();
+        road.index = 0;
+      } else if (!Boolean(road.data.length)) {
+        resetRunningPromise();
+        road.priority = priority;
+        road.data = data.concat();
+        road.index = 0;
+      }
     }
   } catch (e) {
     console.log(e);
@@ -192,6 +209,39 @@ export const hasBlockPosition = (position: Position) => {
   );
 };
 
+export const hasBlockBetweenObjects = (
+  largeSize: Position & { size: number },
+  smallSize: Position & { size: number },
+  isHorizontal: boolean = false
+): boolean => {
+  const minX = Math.min(Math.floor(largeSize.x), Math.floor(smallSize.x));
+  const maxX = Math.max(Math.floor(largeSize.x), Math.floor(smallSize.x));
+
+  const minY = Math.min(Math.floor(largeSize.y), Math.floor(smallSize.y));
+  const maxY = Math.max(Math.floor(largeSize.y), Math.floor(smallSize.y));
+  if (isHorizontal) {
+    for (let i = minY; i <= maxY; i++) {
+      if (
+        blockPositionHorizontal[i]?.findIndex((v) => v >= minX && v <= maxX) >=
+        0
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  for (let i = minX; i <= maxX; i++) {
+    if (
+      blockPositionVertical[i]?.findIndex((v) => v >= minY && v <= maxY) >= 0
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
 export const addObjectPosition = (position: Position) => {
   objectPosition.add(`${Math.floor(position.x)}-${Math.floor(position.y)}`);
 };
@@ -202,33 +252,71 @@ export const hasObjectPosition = (position: Position) => {
   );
 };
 
+export const addBlockPositionHorizontal = (position: Position) => {
+  if (!blockPositionHorizontal[position.y]) {
+    blockPositionHorizontal[position.y] = [];
+  }
+  blockPositionHorizontal[position.y].push(position.x);
+};
+
+export const addBlockPositionVertical = (position: Position) => {
+  if (!blockPositionVertical[position.x]) {
+    blockPositionVertical[position.x] = [];
+  }
+  blockPositionVertical[position.x].push(position.y);
+};
+
 export const saveMap = (map: MapMatch) => {
+  if (loadedMap) {
+    return;
+  }
   mapMatch = map;
   for (let y = 1; y < map.length - 1; y++) {
     for (let x = 1; x < map[y].length - 1; x++) {
       if (map[y][x] === "B") {
         for (let by = 0; by < 20; by++) {
           for (let bx = 0; bx < 20; bx++) {
-            addBlockPosition({
-              x: bx + x * ObjectSize,
-              y: by + y * ObjectSize,
-            });
+            const position = initPosition(
+              bx + x * ObjectSize,
+              by + y * ObjectSize
+            );
+            addBlockPosition(position);
+            if (by === 0 || (by > 0 && bx === 0)) {
+              addBlockPositionHorizontal(position);
+            }
+            if (bx === 0 || (bx > 0 && by === 0)) {
+              addBlockPositionVertical(position);
+            }
           }
         }
       }
       if (map[y][x] === "T" || map[y][x] === "W") {
         for (let by = 0; by < 20; by++) {
           for (let bx = 0; bx < 20; bx++) {
-            addObjectPosition({
-              x: bx + x * ObjectSize,
-              y: by + y * ObjectSize,
-            });
+            const position = initPosition(
+              bx + x * ObjectSize,
+              by + y * ObjectSize
+            );
+            addObjectPosition(position);
+            // if (by === 0) {
+            //   if (!objectPositionHorizontal[position.y]) {
+            //     objectPositionHorizontal[position.y] = [];
+            //   }
+            //   objectPositionHorizontal[position.y].push(position.x);
+            // }
+            // if (bx === 0) {
+            //   if (!objectPositionVertical[position.x]) {
+            //     objectPositionVertical[position.x] = [];
+            //   }
+            //   objectPositionVertical[position.x].push(position.y);
+            // }
           }
         }
       }
     }
   }
   console.log("Save Done");
+  loadedMap = true;
 };
 
 export const saveTanks = (_tanks: Array<Tank>) => {
@@ -349,38 +437,7 @@ const orients = ["UP", "DOWN", "RIGHT", "LEFT"];
 
 const unOrients = ["DOWN", "UP", "LEFT", "RIGHT"];
 
-const safeArea = (
-  tankPosition: Position,
-  bullets: Array<Bullet>,
-  ms: number
-) => {
-  for (const bullet of bullets) {
-    const bulletPosition = bulletPositionAtPlustime(bullet, ms);
-    if (
-      checkBulletRunningToTank(tankPosition, {
-        ...bulletPosition,
-        orient: bullet.orient,
-      })
-    ) {
-      return false;
-    }
-  }
-  return true;
-};
-
-const checkBulletsInsideTank = (
-  tankPosition: Position,
-  bullets: Array<Bullet>,
-  ms: number
-) => {
-  for (const bullet of bullets) {
-    const bulletPosition = bulletPositionAtPlustime(bullet, ms);
-    if (checkBulletInsideTank(tankPosition, bulletPosition)) {
-      return true;
-    }
-  }
-  return false;
-};
+const findDistance = [650, 600, 550, 500, 450, 400, 320, 232, 200, 132, 96, 60];
 
 export const revertRoad = (
   roads: any,
@@ -406,6 +463,103 @@ export const revertRoad = (
     } as never);
   }
   return result;
+};
+
+export const findRoadToTarget = (
+  tankPosition: Position & { orient: Orient },
+  ms: number
+) => {
+  try {
+    if (targetTankUID === "") {
+      return [];
+    }
+    const result: Array<any> = [];
+    let findRoad: any = {
+      [tankPosition.y]: {
+        [tankPosition.x]: "ROOT",
+      },
+    };
+    const tank = tanks.get(targetTankUID);
+
+    if (tank && myTank) {
+      const targetDistance = findDistance.find(
+        (v) => v < euclideanDistance(myTank as never, tank as never)
+      );
+
+      const queue: Array<Position & { ms: number }> = [
+        { ...tankPosition, ms: ms },
+      ];
+
+      while (queue.length) {
+        const tankPosition = queue.shift();
+        if (tankPosition) {
+          const isHorizontal = isSameHorizontalAxisWithSize(
+            { x: tank.x, y: tank.y, size: TankSize },
+            {
+              x: tankPosition.x,
+              y: tankPosition.y,
+              size: TankSize,
+            }
+          );
+          const isVertical = isSameVerticalAxisWithSize(
+            { x: tank.x, y: tank.y, size: TankSize },
+            {
+              x: tankPosition.x,
+              y: tankPosition.y,
+              size: TankSize,
+            }
+          );
+          if (
+            (isVertical || isHorizontal) &&
+            euclideanDistance(tankPosition, tank) <= (targetDistance ?? 60) &&
+            !hasBlockBetweenObjects(
+              { x: tank.x, y: tank.y, size: TankSize },
+              {
+                x: tankPosition.x,
+                y: tankPosition.y,
+                size: TankSize,
+              },
+              isHorizontal ? true : false
+            )
+          ) {
+            result.push(...revertRoad(findRoad, tankPosition as any));
+            break;
+          }
+        }
+        for (let i = 0; i < orients.length; i++) {
+          const orient = orients[i];
+          const moveNextPosition = tankPositionAtNextTime(
+            tankPosition as never,
+            orient as never
+          );
+          if (
+            !checkTankPositionIsObject(moveNextPosition as never) &&
+            !(
+              tankPosition!.x >= 848 ||
+              tankPosition!.x < 20 ||
+              tankPosition!.y >= 648 ||
+              tankPosition!.y < 20
+            )
+          ) {
+            if (!findRoad?.[moveNextPosition.y]?.[moveNextPosition.x]) {
+              if (!findRoad?.[moveNextPosition.y]) {
+                findRoad[moveNextPosition.y] = {};
+              }
+              findRoad[moveNextPosition.y][moveNextPosition.x] = unOrients[i];
+              queue.push({
+                ...moveNextPosition,
+                ms: (tankPosition?.ms ?? 0) + TankTimeSpeed,
+              });
+            }
+          }
+        }
+      }
+    }
+    return result;
+  } catch (e) {
+    console.log(e);
+    return [];
+  }
 };
 
 export const dodgeBullets = (

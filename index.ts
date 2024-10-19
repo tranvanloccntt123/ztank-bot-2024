@@ -10,15 +10,19 @@ import {
   checkBulletRunningToTank,
 } from "./utils";
 import {
+  MovePriority,
   bullets,
+  clearRoad,
   dodgeBullets,
   isReborn,
   isShootAble,
   mapMatch,
   movePromise,
   myTank,
+  resetRunningPromise,
   resolveMovePromise,
   resolveRunningPromise,
+  road,
   startPromise,
   tanks,
 } from "./store";
@@ -151,9 +155,59 @@ joinMatch();
 
 // main();
 
-const init = () => {
-  resolveRunningPromise(true);
+const init = async () => {
   resolveMovePromise(true);
+  while (true) {
+    let canMoveNextPosition = false;
+
+    try {
+      if (road.index !== -1 && road.data.length && road.data[road.index]) {
+        const orient = road.data[road.index];
+        canMoveNextPosition = true;
+        if (myTank && road.priority !== MovePriority.DODGE) {
+          const nextPosition = tankAtNextTime(myTank, orient);
+          bullets.forEach((bullet) => {
+            const position = bulletPositionAtPlustime(bullet, TankTimeSpeed);
+            if (
+              bullet &&
+              bullet.x &&
+              bullet.y &&
+              nextPosition.x &&
+              nextPosition.y &&
+              position.x &&
+              position.y
+            ) {
+              if (
+                checkBulletRunningToTank(nextPosition, {
+                  ...position,
+                  orient: bullet.orient,
+                }) ||
+                checkBulletInsideTank(nextPosition, position)
+              ) {
+                canMoveNextPosition = false;
+              }
+            }
+          });
+        }
+        if (canMoveNextPosition) {
+          moveTank(orient);
+          road.index = road.index + 1;
+          await movePromise;
+          if (road.index === road.data.length) {
+            clearRoad();
+          }
+        }
+      } else {
+        findTargetSystem();
+      }
+    } catch (e) {
+      console.log("MAIN", e);
+    } finally {
+      if (!canMoveNextPosition) {
+        await sleep(2);
+      }
+    }
+  }
 };
 
 init();
@@ -162,6 +216,6 @@ startIntervalToCheckBullet();
 
 startTrickShootSystem();
 
-findTargetSystem();
+// findTargetSystem();
 
 startDodgeRoadSystem();

@@ -13,6 +13,7 @@ import {
 } from "./constants";
 import {
   bullets,
+  hasBlockBetweenObjects,
   hasBlockPosition,
   hasObjectPosition,
   isReborn,
@@ -273,16 +274,20 @@ export const bulletPositionAtPlustime = (bullet: Bullet, ms: number) => {
   }
 };
 
-export const tankPositionAtNextTime = (tank: Position, orient: Orient) => {
+export const tankPositionAtNextTime = (
+  tank: Position,
+  orient: Orient,
+  ms: number = 1
+) => {
   switch (orient) {
     case "DOWN":
-      return initPosition(tank.x, tank.y + TankSpeed);
+      return initPosition(tank.x, tank.y + TankSpeed * ms);
     case "LEFT":
-      return initPosition(tank.x - TankSpeed, tank.y);
+      return initPosition(tank.x - TankSpeed * ms, tank.y);
     case "RIGHT":
-      return initPosition(tank.x + TankSpeed, tank.y);
+      return initPosition(tank.x + TankSpeed * ms, tank.y);
     case "UP":
-      return initPosition(tank.x, tank.y - TankSpeed);
+      return initPosition(tank.x, tank.y - TankSpeed * ms);
     default:
       return initPosition(tank.x, tank.y);
   }
@@ -303,40 +308,33 @@ export const tankAtNextTime = (tank: Tank, orient: Orient) => {
   }
 };
 
-export const bulletInsideTankVertical = (
-  tankPosition: Position,
-  bulletPosition: Position
+export const isSameHorizontalAxisWithSize = (
+  object1: Position & { size: number },
+  object2: Position & { size: number }
 ) => {
-  return (
-    _.inRange(
-      bulletPosition?.x ?? 0,
-      tankPosition.x - 1,
-      tankPosition.x + TankSize + 2
-    ) ||
-    _.inRange(
-      (bulletPosition?.x ?? 0) + BulletSize,
-      tankPosition.x - 1,
-      tankPosition.x + TankSize + 1 + 2
-    )
-  );
+  // Tính biên trên và biên dưới của A và B
+  let topA = object1.y - object1.size / 2; // Biên trên của A
+  let bottomA = object1.y + object1.size / 2; // Biên dưới của A
+  let topB = object2.y - object2.size / 2; // Biên trên của B
+  let bottomB = object2.y + object2.size / 2; // Biên dưới của B
+
+  // Kiểm tra xem các biên có chồng lên nhau không
+  return !(bottomA < topB || bottomB < topA);
 };
 
-export const bulletInsideTankHorizontal = (
-  tankPosition: Position,
-  bulletPosition: Position
+// Hàm kiểm tra xem A và B có nằm cùng trục dọc không, dựa trên tọa độ x và kích thước
+export const isSameVerticalAxisWithSize = (
+  object1: Position & { size: number },
+  object2: Position & { size: number }
 ) => {
-  return (
-    _.inRange(
-      bulletPosition?.y ?? 0,
-      tankPosition.y - 1,
-      tankPosition.y + TankSize + 2
-    ) ||
-    _.inRange(
-      (bulletPosition?.y ?? 0) + BulletSize,
-      tankPosition.y - 1,
-      tankPosition.y + TankSize + 2
-    )
-  );
+  // Tính biên trái và biên phải của A và B
+  let leftA = object1.x - object1.size / 2; // Biên trái của A
+  let rightA = object1.x + object1.size / 2; // Biên phải của A
+  let leftB = object2.x - object2.size / 2; // Biên trái của B
+  let rightB = object2.x + object2.size / 2; // Biên phải của B
+
+  // Kiểm tra xem các biên có chồng lên nhau không
+  return !(rightA < leftB || rightB < leftA);
 };
 
 export const checkTankPositionIsObject = (tankPosition: Position) => {
@@ -437,40 +435,80 @@ export const checkBulletRunningToTank = (
   distance = TankSize * 5
 ) => {
   if (
-    bulletInsideTankVertical(tankPosition, bulletPosition) &&
+    isSameVerticalAxisWithSize(
+      {
+        x: Math.floor(tankPosition.x),
+        y: Math.floor(tankPosition.y),
+        size: TankSize,
+      },
+      {
+        x: Math.floor(bulletPosition.x),
+        y: Math.floor(bulletPosition.y),
+        size: BulletSize,
+      }
+    ) &&
     ["DOWN", "UP"].includes(bulletPosition.orient)
   ) {
     if (
       bulletPosition.orient === "DOWN" &&
       bulletPosition.y <= tankPosition.y &&
-      tankPosition.y - bulletPosition.y < distance
+      tankPosition.y - bulletPosition.y < distance &&
+      !hasBlockBetweenObjects(
+        { ...tankPosition, size: TankSize },
+        { ...bulletPosition, size: BulletSize }
+      )
     ) {
       return true;
     }
     if (
       bulletPosition.orient === "UP" &&
       bulletPosition.y >= tankPosition.y &&
-      bulletPosition.y - tankPosition.y < distance
+      bulletPosition.y - tankPosition.y < distance &&
+      !hasBlockBetweenObjects(
+        { ...tankPosition, size: TankSize },
+        { ...bulletPosition, size: BulletSize }
+      )
     ) {
       return true;
     }
     return false;
   }
   if (
-    bulletInsideTankHorizontal(tankPosition, bulletPosition) &&
+    isSameHorizontalAxisWithSize(
+      {
+        x: Math.floor(tankPosition.x),
+        y: Math.floor(tankPosition.y),
+        size: TankSize,
+      },
+      {
+        x: Math.floor(bulletPosition.x),
+        y: Math.floor(bulletPosition.y),
+        size: BulletSize,
+      }
+    ) &&
     ["RIGHT", "LEFT"].includes(bulletPosition.orient)
   ) {
     if (
       bulletPosition.orient === "RIGHT" &&
       bulletPosition.x <= tankPosition.x &&
-      tankPosition.x - bulletPosition.x < distance
+      tankPosition.x - bulletPosition.x < distance &&
+      !hasBlockBetweenObjects(
+        { ...tankPosition, size: TankSize },
+        { ...bulletPosition, size: BulletSize },
+        true
+      )
     ) {
       return true;
     }
     if (
       bulletPosition.orient === "LEFT" &&
       bulletPosition.x >= tankPosition.x &&
-      tankPosition.x - bulletPosition.x < distance
+      tankPosition.x - bulletPosition.x < distance &&
+      !hasBlockBetweenObjects(
+        { ...tankPosition, size: TankSize },
+        { ...bulletPosition, size: BulletSize },
+        true
+      )
     ) {
       return true;
     }
@@ -483,5 +521,38 @@ export const checkBlockBetweenBulletAndTank = (
   tankPosition: Position,
   bulletPosition: Position & { orient: Orient }
 ) => {
+  return false;
+};
+
+export const safeArea = (
+  tankPosition: Position,
+  bullets: Array<Bullet>,
+  ms: number
+) => {
+  for (const bullet of bullets) {
+    const bulletPosition = bulletPositionAtPlustime(bullet, ms);
+    if (
+      checkBulletRunningToTank(tankPosition, {
+        ...bulletPosition,
+        orient: bullet.orient,
+      })
+    ) {
+      return false;
+    }
+  }
+  return true;
+};
+
+export const checkBulletsInsideTank = (
+  tankPosition: Position,
+  bullets: Array<Bullet>,
+  ms: number
+) => {
+  for (const bullet of bullets) {
+    const bulletPosition = bulletPositionAtPlustime(bullet, ms);
+    if (checkBulletInsideTank(tankPosition, bulletPosition)) {
+      return true;
+    }
+  }
   return false;
 };

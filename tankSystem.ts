@@ -15,6 +15,8 @@ import {
   bullets,
   clearRoad,
   dodgeBullets,
+  findRoadToTarget,
+  findTargetTank,
   hasBlockPosition,
   isReborn,
   isShootAble,
@@ -27,11 +29,16 @@ import {
   runningPromise,
   saveRoad,
   tanks,
+  targetTankUID,
 } from "./store";
 import {
+  bulletPositionAtPlustime,
   bulletPositionAtRunTime,
+  checkBulletInsideTank,
+  checkBulletRunningToTank,
   euclideanDistance,
   moveVisible,
+  tankAtNextTime,
 } from "./utils";
 
 export const startTrickShootSystem = () => {
@@ -212,7 +219,7 @@ export const startDodgeRoadSystem = () => {
     } catch (e) {
       console.log(e);
     }
-  }, 2);
+  }, 1);
 };
 
 let intervalRunning: any = null;
@@ -231,21 +238,49 @@ export const runSystem = (road: { priority: number; data: Array<Orient> }) => {
   //     ? "NORMAL"
   //     : "NOTHING"
   // );
-  if (road.priority === 0) {
-    console.log("DODGE", road.data);
-  }
   intervalRunning = setInterval(async () => {
     if (road.data.length) {
       resetRunningPromise();
       await movePromise;
-      for (const orient of road.data) {
-        moveTank(orient);
-        await movePromise;
+      let i = 0;
+      while (i < road.data.length) {
+        const orient = road.data[i];
+        let canMoveNextPosition = true;
+        if (myTank && road.priority !== MovePriority.DODGE) {
+          const nextPosition = tankAtNextTime(myTank, orient);
+          bullets.forEach((bullet) => {
+            const position = bulletPositionAtPlustime(bullet, TankTimeSpeed);
+            if (
+              bullet &&
+              bullet.x &&
+              bullet.y &&
+              nextPosition.x &&
+              nextPosition.y &&
+              position.x &&
+              position.y
+            ) {
+              if (
+                checkBulletRunningToTank(nextPosition, {
+                  ...position,
+                  orient: bullet.orient,
+                }) ||
+                checkBulletInsideTank(nextPosition, position)
+              ) {
+                canMoveNextPosition = false;
+              }
+            }
+          });
+        }
+        if (canMoveNextPosition) {
+          moveTank(orient);
+          i++;
+          await movePromise;
+        }
       }
       clearRoad();
       resolveRunningPromise(true);
     }
-  }, 2);
+  }, 17);
 };
 
 let intervalFindTargetRoad: any = null;
@@ -255,24 +290,30 @@ export const stopIntervalFindTargetRoad = () => {
 };
 
 export const findTargetSystem = () => {
-  intervalFindTargetRoad = setInterval(async () => {
-    await runningPromise;
-    if (myTank && myTank.x && myTank.y) {
-      const orientList = moveVisible(mapMatch, myTank);
-      let orientTest = orientList[
-        Math.floor(Math.random() * orientList.length)
-      ] as any;
-      saveRoad(
-        MovePriority.NORMAL,
-        Array.from(
-          {
-            length: Math.floor(
-              Math.random() * Math.floor(300 / TankSpeed) + 100
-            ),
-          },
-          () => orientTest
-        )
+  if (targetTankUID === "") {
+    findTargetTank();
+  }
+  try {
+    if (
+      myTank &&
+      myTank.x &&
+      myTank.y &&
+      road.priority > MovePriority.NORMAL &&
+      road.data.length === 0
+    ) {
+      const _road = findRoadToTarget(
+        { x: myTank.x, y: myTank.y, orient: myTank.orient },
+        0
       );
+      if (_road.length >= 1) {
+        saveRoad(
+          MovePriority.NORMAL,
+          _road.slice(1).map((v) => v.orient)
+        );
+        console.log("SAVE FIND TARGET", _road.length);
+      }
     }
-  }, 2);
+  } catch (e) {
+    console.log(e);
+  }
 };
