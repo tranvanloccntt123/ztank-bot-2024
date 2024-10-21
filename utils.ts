@@ -17,6 +17,7 @@ import {
   hasBlockPosition,
   hasObjectPosition,
   isReborn,
+  mapMatch,
 } from "./store";
 import * as _ from "lodash";
 
@@ -56,16 +57,10 @@ export const mapIndexOnMapMatch = (
     (position?.x ?? 0) / ObjectSize,
     (position?.y ?? 0) / ObjectSize
   );
-  const startX = parseInt(mapIndex.x.toString(), 10);
-  const startY = parseInt(mapIndex.y.toString(), 10);
-  const endX = parseInt(
-    (mapIndex.x + (size ?? TankOnObjectPercent)).toString(),
-    10
-  );
-  const endY = parseInt(
-    (mapIndex.y + (size ?? TankOnObjectPercent)).toString(),
-    10
-  );
+  const startX = Math.round(mapIndex.x);
+  const startY = Math.round(mapIndex.y);
+  const endX = Math.round(mapIndex.x + (size ?? TankOnObjectPercent));
+  const endY = Math.round(mapIndex.y + (size ?? TankOnObjectPercent));
   return {
     startX,
     startY,
@@ -293,6 +288,25 @@ export const tankPositionAtNextTime = (
   }
 };
 
+export const tankPositionDownStep = (
+  tank: Position,
+  orient: Orient,
+  step: number
+) => {
+  switch (orient) {
+    case "DOWN":
+      return initPosition(tank.x, tank.y + step);
+    case "LEFT":
+      return initPosition(tank.x - step, tank.y);
+    case "RIGHT":
+      return initPosition(tank.x + step, tank.y);
+    case "UP":
+      return initPosition(tank.x, tank.y - step);
+    default:
+      return initPosition(tank.x, tank.y);
+  }
+};
+
 export const tankAtNextTime = (tank: Tank, orient: Orient) => {
   switch (orient) {
     case "DOWN":
@@ -338,6 +352,51 @@ export const isSameVerticalAxisWithSize = (
 };
 
 export const checkTankPositionIsObject = (tankPosition: Position) => {
+  if (tankPosition.x === 546 && tankPosition.y === 472) {
+    console.log(
+      1,
+      hasBlockPosition({
+        x: tankPosition.x,
+        y: tankPosition.y,
+      }),
+      hasBlockPosition({
+        x: tankPosition.x + TankSize,
+        y: tankPosition.y,
+      }),
+      hasBlockPosition({
+        x: tankPosition.x + TankSize,
+        y: tankPosition.y + TankSize,
+      }),
+      hasBlockPosition({
+        x: tankPosition.x,
+        y: tankPosition.y + TankSize,
+      }),
+      hasBlockPosition({
+        x: tankPosition.x + TankSize / 2,
+        y: tankPosition.y + TankSize / 2,
+      }),
+      hasObjectPosition({
+        x: tankPosition.x,
+        y: tankPosition.y,
+      }),
+      hasObjectPosition({
+        x: tankPosition.x + TankSize,
+        y: tankPosition.y,
+      }),
+      hasObjectPosition({
+        x: tankPosition.x + TankSize,
+        y: tankPosition.y + TankSize,
+      }),
+      hasObjectPosition({
+        x: tankPosition.x,
+        y: tankPosition.y + TankSize,
+      }),
+      hasObjectPosition({
+        x: tankPosition.x + TankSize / 2,
+        y: tankPosition.y + TankSize / 2,
+      })
+    );
+  }
   return (
     hasBlockPosition({
       x: tankPosition.x,
@@ -437,13 +496,13 @@ export const checkBulletRunningToTank = (
   if (
     isSameVerticalAxisWithSize(
       {
-        x: Math.floor(tankPosition.x),
-        y: Math.floor(tankPosition.y),
+        x: Math.round(tankPosition.x),
+        y: Math.round(tankPosition.y),
         size: TankSize,
       },
       {
-        x: Math.floor(bulletPosition.x),
-        y: Math.floor(bulletPosition.y),
+        x: Math.round(bulletPosition.x),
+        y: Math.round(bulletPosition.y),
         size: BulletSize,
       }
     ) &&
@@ -476,13 +535,13 @@ export const checkBulletRunningToTank = (
   if (
     isSameHorizontalAxisWithSize(
       {
-        x: Math.floor(tankPosition.x),
-        y: Math.floor(tankPosition.y),
+        x: Math.round(tankPosition.x),
+        y: Math.round(tankPosition.y),
         size: TankSize,
       },
       {
-        x: Math.floor(bulletPosition.x),
-        y: Math.floor(bulletPosition.y),
+        x: Math.round(bulletPosition.x),
+        y: Math.round(bulletPosition.y),
         size: BulletSize,
       }
     ) &&
@@ -555,4 +614,31 @@ export const checkBulletsInsideTank = (
     }
   }
   return false;
+};
+
+export const isOverlap = (
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  size: number
+) => {
+  // Tính biên của A
+  let leftA = x1 - size / 2; // Biên trái của A
+  let rightA = x1 + size / 2; // Biên phải của A
+  let topA = y1 - size / 2; // Biên trên của A
+  let bottomA = y1 + size / 2; // Biên dưới của A
+
+  // Tính biên của B
+  let leftB = x2 - size / 2; // Biên trái của B
+  let rightB = x2 + size / 2; // Biên phải của B
+  let topB = y2 - size / 2; // Biên trên của B
+  let bottomB = y2 + size / 2; // Biên dưới của B
+
+  // Kiểm tra xem có chồng lấn trên cả trục x và trục y hay không
+  let overlapX = !(rightA < leftB || rightB < leftA);
+  let overlapY = !(bottomA < topB || bottomB < topA);
+
+  // Nếu chồng lấn trên cả trục x và y thì trả về true (overlap)
+  return overlapX && overlapY;
 };

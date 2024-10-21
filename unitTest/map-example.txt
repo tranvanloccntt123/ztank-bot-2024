@@ -1,35 +1,37 @@
-BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
-B                                           B
-B                                           B
-B  TTTTTTT                         TTTTTTT  B
-B  TTTTTTT                         TTTTTTT  B
-B  TT                                   TT  B
-B  TT                                   TT  B
-B  TT     BBBBBBB           BBBBBBB     TT  B
-B  TT     BBBBBBB           BBBBBBB     TT  B
-B         BB                     BB         B
-B         BB                     BB         B
-B         BB     WWWWWWWWWWW     BB         B
-B         BB     WWWWWWWWWWW     BB         B
-B                        WWW                B
-B                       WWW                 B
-B                      WWW                  B
-B                     WWW                   B
-B                    WWW                    B
-B                   WWW                     B
-B                  WWW                      B
-B                 WWW                       B
-B         BB     WWW                        B
-B         BB     WWWWWWWWWWW     BB         B
-B         BB     WWWWWWWWWWW     BB         B
-B         BB                     BB         B
-B         BB                     BB         B
-B  TT     BBBBBBB           BBBBBBB     TT  B
-B  TT     BBBBBBB           BBBBBBB     TT  B
-B  TT                                   TT  B
-B  TT                                   TT  B
-B  TTTTTTT                         TTTTTTT  B
-B  TTTTTTT                         TTTTTTT  B
-B                                           B
-B                                           B
-BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB 0
+B                                           B 1
+B                                           B 2
+B  TTTTTTT                         TTTTTTT  B 3
+B  TTTTTTT                         TTTTTTT  B 4
+B  TT                                   TT  B 5
+B  TT                                   TT  B 6 
+B  TT     BBBBBBB           BBBBBBB     TT  B 7
+B  TT     BBBBBBB           BBBBBBB     TT  B 8
+B         BB                     BB         B 9
+B         BB                     BB         B 10
+B         BB     WWWWWWWWWWW     BB         B 11
+B         BB     WWWWWWWWWWW     BB         B 12
+B                        WWW                B 13
+B                       WWW                 B 14
+B                      WWW                  B 15
+B                     WWW                   B 16
+B                    WWW                    B 17
+B                   WWW                     B 18
+B                  WWW                      B 19
+B                 WWW                       B 20
+B         BB     WWW                        B 21
+B         BB     WWWWWWWWWWW     BB         B 22
+B         BB     WWWWWWWWWWW     BB         B 23
+B         BB                     BB         B 24
+B         BB                     BB         B 25
+B  TT     BBBBBBB           BBBBBBB     TT  B 26
+B  TT     BBBBBBB           BBBBBBB     TT  B 27
+B  TT                                   TT  B 28
+B  TT                                   TT  B 29
+B  TTTTTTT                         TTTTTTT  B 30
+B  TTTTTTT                         TTTTTTT  B 31
+B                                           B 32
+B                                           B 33
+BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB 34
+                                             
+012345678901234567890123456789012345678901234

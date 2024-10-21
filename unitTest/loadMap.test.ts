@@ -1,8 +1,9 @@
-
 import {
   bullets,
   dodgeBullets,
+  findRoadToPosition,
   findRoadToTarget,
+  findTargetOnMap,
   findTargetTank,
   myTank,
   saveBullets,
@@ -16,44 +17,44 @@ saveMap(mapTest as any);
 
 saveTanks([
   {
-    x: 356,
-    y: 313,
+    x: 320,
+    y: 481,
     speed: 3,
     type: 1,
-    uid: "WCtVAOVrQnI2CxjIAAE4",
-    orient: "LEFT",
-    isAlive: true,
-    size: 33,
-    name: "thoixong!",
-    shootable: false,
-    // movable: false,
-    shootCooldown: 43,
-    invulnerable: false,
-    protectCooldown: 0,
-    score: 235,
-    streak: 2,
-    bounty: 3,
-    color: 0,
-  },
-  {
-    x: 800,
-    y: 21,
-    speed: 3,
-    type: 1,
-    uid: "zMmEAyVC-_MOx8p_AAFY",
-    orient: "UP",
+    uid: "q00dtJ1HlyOhBjAVAAVn",
+    orient: "RIGHT",
     isAlive: true,
     size: 33,
     name: "The Fool",
     shootable: true,
-    // moveable: true,
+    movable: false,
     shootCooldown: 0,
     invulnerable: false,
     protectCooldown: 0,
     score: 0,
     streak: 0,
     bounty: 0,
-    color: 0,
+    color: 1,
+  },
+  {
+    x: 351,
+    y: 58,
+    speed: 3,
+    type: 1,
+    uid: "TAKAd3flPK_tuIFMAALh",
+    orient: "RIGHT",
+    isAlive: true,
+    size: 33,
+    name: "zarenabot",
+    shootable: false,
+    movable: false,
+    shootCooldown: 37,
+    invulnerable: false,
+    protectCooldown: 0,
+    score: 903,
+    streak: 1,
+    bounty: 0,
+    color: 1,
   },
 ]);
 
@@ -82,21 +83,17 @@ test("Dodge", () => {
     Array.from(bullets.values()),
     0
   );
-  expect(result.result.length).toBeGreaterThan(1);
+  expect(result.result.length).toBe(1);
 });
-
+//{ x: 34, y: 4 }
 test("Find road", () => {
-  findTargetTank();
-  const result = findRoadToTarget(
-    {
-      x: myTank!.x,
-      y: myTank!.y,
-      orient: myTank!.orient,
-    },
-    0
-  );
+  const result = findTargetOnMap();
 
-  console.log(result);
+  expect(result.length).toBeGreaterThanOrEqual(1);
 
-  expect(result.length).toBeGreaterThan(1);
+  const road = findRoadToPosition({ x: 16, y: 25 });
+
+  console.log(road);
+
+  expect(road.length).toBeGreaterThanOrEqual(1);
 });

@@ -6,6 +6,7 @@ import {
   SERVER_1,
   SERVER_2,
   SERVER_3,
+  ShootAbleTime,
   TankTimeSpeed,
   Token,
 } from "./constants";
@@ -28,9 +29,12 @@ import {
   isJoinning,
   clearRoad,
   resolveRunningPromise,
+  resetShootPromise,
+  saveIsShootAble,
+  resolveShootPromise,
 } from "./store";
 
-const socket = io(process?.env?.SOCKET_SERVER ?? SERVER_2, {
+const socket = io(process?.env?.SOCKET_SERVER ?? SERVER_1, {
   auth: {
     token: Token,
   },
@@ -44,11 +48,18 @@ const socket = io(process?.env?.SOCKET_SERVER ?? SERVER_2, {
 
 export const joinMatch = () => {
   socket.emit(EmitEvent.Join);
-  saveIsJoinning(true);2
+  saveIsJoinning(true);
+  2;
 };
 
 export const shoot = () => {
+  resetShootPromise();
+  saveIsShootAble(false);
   socket.emit(EmitEvent.Shoot);
+  setTimeout(() => {
+    resolveShootPromise(true);
+    saveIsShootAble(true);
+  }, ShootAbleTime);
 };
 
 export const moveTank = (orient: Orient) => {

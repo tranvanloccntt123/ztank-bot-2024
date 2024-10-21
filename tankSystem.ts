@@ -1,13 +1,10 @@
 import _ from "lodash";
 import { moveTank, shoot } from "./connect";
 import {
-  TankSize,
   BulletSize,
   ShootAbleTime,
   MapSize,
-  ShootArea,
   TankTimeSpeed,
-  TankSpeed,
   MY_NAME,
 } from "./constants";
 import {
@@ -28,6 +25,7 @@ import {
   road,
   runningPromise,
   saveRoad,
+  shootPromise,
   tanks,
   targetTankUID,
 } from "./store";
@@ -36,98 +34,61 @@ import {
   bulletPositionAtRunTime,
   checkBulletInsideTank,
   checkBulletRunningToTank,
-  euclideanDistance,
-  moveVisible,
+  isSameHorizontalAxisWithSize,
+  isSameVerticalAxisWithSize,
+  sleep,
   tankAtNextTime,
 } from "./utils";
 
-export const startTrickShootSystem = () => {
-  setInterval(async () => {
+export const startTrickShootSystem = async () => {
+  while (true) {
     try {
+      await shootPromise;
+      await movePromise;
       if (isShootAble && myTank && myTank.x && myTank.y) {
         tanks.forEach((tank) => {
           if (!myTank?.x || !myTank?.y || tank.name === MY_NAME) {
             return;
           }
-          // if (euclideanDistance(tank, myTank!) > ShootArea) {
-          //   return;
-          // }
           //Vertical
-          if (
-            _.inRange(tank.x, myTank?.x ?? 0, (myTank?.x ?? 0) + TankSize) &&
-            _.inRange(
-              Math.abs((myTank?.x ?? 0) - tank.x),
-              (TankSize - BulletSize) / 2,
-              (TankSize - BulletSize) / 2 + BulletSize
-            )
-          ) {
+          if (isSameVerticalAxisWithSize(tank, myTank)) {
             if (myTank?.orient === "UP" && tank.y < (myTank?.y ?? 0)) {
               shoot();
-            }
-            if (myTank?.orient === "DOWN" && tank.y > (myTank?.y ?? 0)) {
+            } else if (myTank?.orient === "DOWN" && tank.y > (myTank?.y ?? 0)) {
               shoot();
-            }
-          }
-          if (
-            _.inRange(
-              tank.x + TankSize,
-              myTank?.x ?? 0,
-              (myTank?.x ?? 0) + TankSize
-            ) &&
-            _.inRange(
-              Math.abs((myTank?.x ?? 0) - tank.x + TankSize),
-              (TankSize - BulletSize) / 2,
-              (TankSize - BulletSize) / 2 + BulletSize
-            )
-          ) {
-            if (myTank?.orient === "UP" && tank.y < (myTank?.y ?? 0)) {
-              shoot();
-            }
-            if (myTank?.orient === "DOWN" && tank.y > (myTank?.y ?? 0)) {
-              shoot();
+            } else {
+              if (tank.y < (myTank?.y ?? 0)) {
+                saveRoad(MovePriority.SHOOT, ["DOWN"]);
+              } else {
+                saveRoad(MovePriority.SHOOT, ["UP"]);
+              }
             }
           }
           //Horizontal
-          if (
-            _.inRange(tank.y, myTank?.y ?? 0, (myTank?.y ?? 0) + TankSize) &&
-            _.inRange(
-              Math.abs((myTank?.y ?? 0) - tank.x),
-              (TankSize - BulletSize) / 2,
-              (TankSize - BulletSize) / 2 + BulletSize
-            )
-          ) {
+          if (isSameHorizontalAxisWithSize(tank, myTank)) {
             if (myTank?.orient === "LEFT" && tank.x < (myTank?.x ?? 0)) {
               shoot();
-            }
-            if (myTank?.orient === "RIGHT" && tank.x > (myTank?.x ?? 0)) {
+            } else if (
+              myTank?.orient === "RIGHT" &&
+              tank.x > (myTank?.x ?? 0)
+            ) {
               shoot();
-            }
-          }
-          if (
-            _.inRange(
-              tank.y + TankSize,
-              myTank?.y ?? 0,
-              (myTank?.y ?? 0) + TankSize
-            ) &&
-            _.inRange(
-              Math.abs((myTank?.y ?? 0) - tank.x + TankSize),
-              (TankSize - BulletSize) / 2,
-              (TankSize - BulletSize) / 2 + BulletSize
-            )
-          ) {
-            if (myTank?.orient === "LEFT" && tank.x < (myTank?.x ?? 0)) {
-              shoot();
-            }
-            if (myTank?.orient === "RIGHT" && tank.x > (myTank?.x ?? 0)) {
-              shoot();
+            } else {
+              if (tank.x < (myTank?.x ?? 0)) {
+                saveRoad(MovePriority.SHOOT, ["LEFT"]);
+              } else {
+                saveRoad(MovePriority.SHOOT, ["RIGHT"]);
+              }
             }
           }
         });
       }
     } catch (e) {
       console.log("startTrickShootSystem", e);
+    } finally {
+      await sleep(2);
     }
-  }, ShootAbleTime);
+  }
 };
 
 let countDownMove: any = null;
@@ -195,11 +156,9 @@ export const stopIntervalDodge = () => {
   clearInterval(intervalDodge);
 };
 
-export const startDodgeRoadSystem = () => {
-  intervalDodge = setInterval(async () => {
-    if (road.priority === MovePriority.DODGE) {
-      await runningPromise;
-    }
+export const startDodgeRoadSystem = async () => {
+  while (true) {
+    await movePromise;
     try {
       if (myTank && !isReborn.has(myTank.name)) {
         if (bullets.size) {
@@ -218,8 +177,10 @@ export const startDodgeRoadSystem = () => {
       }
     } catch (e) {
       console.log(e);
+    } finally {
+      await sleep(2);
     }
-  }, 1);
+  }
 };
 
 let intervalRunning: any = null;
@@ -289,31 +250,34 @@ export const stopIntervalFindTargetRoad = () => {
   clearInterval(intervalFindTargetRoad);
 };
 
-export const findTargetSystem = () => {
-  if (targetTankUID === "") {
-    findTargetTank();
-  }
-  try {
-    if (
-      myTank &&
-      myTank.x &&
-      myTank.y &&
-      road.priority > MovePriority.NORMAL &&
-      road.data.length === 0
-    ) {
-      const _road = findRoadToTarget(
-        { x: myTank.x, y: myTank.y, orient: myTank.orient },
-        0
-      );
-      if (_road.length >= 1) {
-        saveRoad(
-          MovePriority.NORMAL,
-          _road.slice(1).map((v) => v.orient)
-        );
-        console.log("SAVE FIND TARGET", _road.length);
-      }
+export const findTargetSystem = async () => {
+  while (true) {
+    if (targetTankUID === "") {
+      findTargetTank();
     }
-  } catch (e) {
-    console.log(e);
+    try {
+      if (
+        myTank &&
+        myTank.x &&
+        myTank.y &&
+        road.priority > MovePriority.NORMAL &&
+        road.data.length === 0
+      ) {
+        const _road = findRoadToTarget(
+          { x: myTank.x, y: myTank.y, orient: myTank.orient },
+          0
+        );
+        if (_road.length >= 1) {
+          saveRoad(
+            MovePriority.NORMAL,
+            _road.slice(1).map((v) => v.orient)
+          );
+        }
+      }
+    } catch (e) {
+      console.log(e);
+    } finally {
+      await sleep(TankTimeSpeed);
+    }
   }
 };

@@ -1,20 +1,20 @@
 {
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist"
+  },
+  "include": ["*.ts", "unitTest/loadMap.test.ts", "unitTest/mapTest.ts"],
+  "exclude": ["node_modules"],
+  "ts-node": {
+    "esm": true,
     "compilerOptions": {
-      "target": "es2020",
-      "module": "commonjs",
-      "strict": true,
-      "esModuleInterop": true,
-      "skipLibCheck": true,
-      "forceConsistentCasingInFileNames": true,
-      "outDir": "./dist"
-    },
-    "include": ["*.ts", "unitTest/loadMap.test.ts", "unitTest/mapTest.ts"],
-    "exclude": ["node_modules"],
-    "ts-node": {
-      "esm": true,
-      "compilerOptions": {
-        "module": "nodenext"
-      }
+      "module": "nodenext"
     }
-  }
-  
+  },
+  "types": ["jest"]
+}

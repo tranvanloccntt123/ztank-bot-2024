@@ -18,6 +18,7 @@ type Tank = {
   streak: number;
   bounty: number;
   color: number;
+  movable: boolean;
 };
 
 type Bullet = {

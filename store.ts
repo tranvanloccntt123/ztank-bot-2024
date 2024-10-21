@@ -4,6 +4,7 @@ import {
   MapSize,
   ObjectSize,
   TankSize,
+  TankSpeed,
   TankTimeSpeed,
 } from "./constants";
 import { runSystem, stopIntervalRunning } from "./tankSystem";
@@ -17,6 +18,9 @@ import {
   tankPositionAtNextTime,
   isSameHorizontalAxisWithSize,
   isSameVerticalAxisWithSize,
+  mapIndexOnMapMatch,
+  isOverlap,
+  tankPositionDownStep,
 } from "./utils";
 import * as _ from "lodash";
 
@@ -116,6 +120,12 @@ export let runningPromise = new Promise<boolean>(
   (resolve) => (resolveRunningPromise = resolve)
 );
 
+export const resetShootPromise = () => {
+  shootPromise = new Promise<boolean>(
+    (resolve) => (resolveShootPromise = resolve)
+  );
+};
+
 export const resetMovePromise = () => {
   movePromise = new Promise<boolean>(
     (resolve) => (resolveMovePromise = resolve)
@@ -200,12 +210,12 @@ export const clearIsReboring = (tankName: string) => {
 };
 
 export const addBlockPosition = (position: Position) => {
-  blockPosition.add(`${Math.floor(position.x)}-${Math.floor(position.y)}`);
+  blockPosition.add(`${Math.round(position.x)}-${Math.round(position.y)}`);
 };
 
 export const hasBlockPosition = (position: Position) => {
   return blockPosition.has(
-    `${Math.floor(position.x)}-${Math.floor(position.y)}`
+    `${Math.round(position.x)}-${Math.round(position.y)}`
   );
 };
 
@@ -214,11 +224,11 @@ export const hasBlockBetweenObjects = (
   smallSize: Position & { size: number },
   isHorizontal: boolean = false
 ): boolean => {
-  const minX = Math.min(Math.floor(largeSize.x), Math.floor(smallSize.x));
-  const maxX = Math.max(Math.floor(largeSize.x), Math.floor(smallSize.x));
+  const minX = Math.min(Math.round(largeSize.x), Math.round(smallSize.x));
+  const maxX = Math.max(Math.round(largeSize.x), Math.round(smallSize.x));
 
-  const minY = Math.min(Math.floor(largeSize.y), Math.floor(smallSize.y));
-  const maxY = Math.max(Math.floor(largeSize.y), Math.floor(smallSize.y));
+  const minY = Math.min(Math.round(largeSize.y), Math.round(smallSize.y));
+  const maxY = Math.max(Math.round(largeSize.y), Math.round(smallSize.y));
   if (isHorizontal) {
     for (let i = minY; i <= maxY; i++) {
       if (
@@ -243,12 +253,12 @@ export const hasBlockBetweenObjects = (
 };
 
 export const addObjectPosition = (position: Position) => {
-  objectPosition.add(`${Math.floor(position.x)}-${Math.floor(position.y)}`);
+  objectPosition.add(`${Math.round(position.x)}-${Math.round(position.y)}`);
 };
 
 export const hasObjectPosition = (position: Position) => {
   return objectPosition.has(
-    `${Math.floor(position.x)}-${Math.floor(position.y)}`
+    `${Math.round(position.x)}-${Math.round(position.y)}`
   );
 };
 
@@ -274,8 +284,8 @@ export const saveMap = (map: MapMatch) => {
   for (let y = 1; y < map.length - 1; y++) {
     for (let x = 1; x < map[y].length - 1; x++) {
       if (map[y][x] === "B") {
-        for (let by = 0; by < 20; by++) {
-          for (let bx = 0; bx < 20; bx++) {
+        for (let by = 0; by < ObjectSize; by++) {
+          for (let bx = 0; bx < ObjectSize; bx++) {
             const position = initPosition(
               bx + x * ObjectSize,
               by + y * ObjectSize
@@ -291,8 +301,8 @@ export const saveMap = (map: MapMatch) => {
         }
       }
       if (map[y][x] === "T" || map[y][x] === "W") {
-        for (let by = 0; by < 20; by++) {
-          for (let bx = 0; bx < 20; bx++) {
+        for (let by = 0; by < ObjectSize; by++) {
+          for (let bx = 0; bx < ObjectSize; bx++) {
             const position = initPosition(
               bx + x * ObjectSize,
               by + y * ObjectSize
@@ -433,11 +443,104 @@ export const checkBulletInsideBlock = (position: Position) => {
   );
 };
 
+export let roadMapX20: Array<Position> = [];
+
+const movePostionDirection = [
+  { x: 1, y: 0 }, // Di chuyển theo x+
+  { x: -1, y: 0 }, // Di chuyển theo x-
+  { x: 0, y: 1 }, // Di chuyển theo y+
+  { x: 0, y: -1 }, // Di chuyển theo y-
+];
+
+export const findTargetOnMap = () => {
+  if (targetTankUID === "") {
+    findTargetTank();
+  }
+  if (targetTankUID === "" || !myTank || !myTank.x || !myTank.y) {
+    return [];
+  }
+  const tank = tanks.get(targetTankUID);
+  if (!tank) {
+    return [];
+  }
+  const myTankIndex = initPosition(
+    Math.round((myTank.x + TankSize / 2) / ObjectSize),
+    Math.round((myTank.y + TankSize / 2) / ObjectSize)
+  );
+  const targetTankIndex = initPosition(
+    Math.round((tank.x + TankSize / 2) / ObjectSize),
+    Math.round((tank.y + TankSize / 2) / ObjectSize)
+  );
+  const result: Array<Position> = [];
+  const checked: any = {
+    [myTankIndex.y]: {
+      [myTankIndex.x]: null,
+    },
+  };
+  const queue: Array<Position> = [
+    {
+      x: myTankIndex.x,
+      y: myTankIndex.y,
+    },
+  ];
+  while (queue.length) {
+    const tankPosition = queue.shift();
+    if (!tankPosition) {
+      continue;
+    }
+    if (
+      tankPosition.x === targetTankIndex.x &&
+      tankPosition.y === targetTankIndex.y
+    ) {
+      //finded
+      let position = checked[tankPosition?.y ?? ""][tankPosition?.x ?? ""];
+      while (
+        position !== null &&
+        (position?.x !== myTankIndex.x || position?.y !== myTankIndex.y)
+      ) {
+        result.unshift(position as never);
+        position = checked[position?.y ?? ""][position?.x ?? ""];
+      }
+      break;
+    }
+    for (let dir of movePostionDirection) {
+      const moveNextPosition = initPosition(
+        tankPosition.x + dir.x,
+        tankPosition.y + dir.y
+      );
+      if (
+        moveNextPosition.x < 1 ||
+        moveNextPosition.x > 43 ||
+        moveNextPosition.y < 1 ||
+        moveNextPosition.y > 33 ||
+        ["B", "T", "W"].includes(
+          mapMatch[moveNextPosition.y][moveNextPosition.x] as never
+        )
+      ) {
+        continue;
+      }
+      if (!checked?.[moveNextPosition.y]?.[moveNextPosition.x]) {
+        if (!checked?.[moveNextPosition.y]) {
+          checked[moveNextPosition.y] = {};
+        }
+        checked[moveNextPosition.y][moveNextPosition.x] = {
+          x: tankPosition.x,
+          y: tankPosition.y,
+        };
+        queue.push(moveNextPosition);
+      }
+    }
+  }
+  return result;
+};
+
 const orients = ["UP", "DOWN", "RIGHT", "LEFT"];
 
 const unOrients = ["DOWN", "UP", "LEFT", "RIGHT"];
 
-const findDistance = [650, 600, 550, 500, 450, 400, 320, 232, 200, 132, 96, 60];
+const findDistance = [
+  800, 750, 700, 650, 600, 550, 500, 450, 400, 320, 232, 200, 132, 96, 60,
+];
 
 export const revertRoad = (
   roads: any,
@@ -455,12 +558,136 @@ export const revertRoad = (
   } as never);
   while (unOrient !== "ROOT") {
     unOrient = roads[prevPosition?.y ?? ""][prevPosition?.x ?? ""];
+    if (unOrient === "ROOT") {
+      break;
+    }
     findOrientIndex = unOrients.findIndex((v) => v === unOrient);
     prevPosition = tankPositionAtNextTime(prevPosition as never, unOrient);
     result.unshift({
       ...prevPosition,
       orient: orients[findOrientIndex] ?? "null",
     } as never);
+  }
+  return result;
+};
+
+export const findRoadToPosition = (targetPosition: Position) => {
+  const result: Array<any> = [];
+  try {
+    const tankPosition = initPosition(myTank?.x ?? 0, myTank?.y ?? 0);
+    let findRoad: any = {
+      [tankPosition.y]: {
+        [tankPosition.x]: "ROOT",
+      },
+    };
+
+    if (targetPosition && myTank) {
+      const queue: Array<Position & { ms: number }> = [
+        { ...tankPosition, ms: 0 },
+      ];
+      let virtualPosition = {
+        x: Math.round(targetPosition.x * ObjectSize),
+        y: Math.round(targetPosition.y * ObjectSize),
+      };
+      if (mapMatch?.[targetPosition.y + 1]?.[targetPosition.x] !== null) {
+        //check phia duoi
+        virtualPosition.y -= TankSize - ObjectSize + 1;
+      }
+      // if (
+      //   ["B", "T", "W"].includes(
+      //     mapMatch?.[targetPosition.y - 1]?.[targetPosition.x] as never
+      //   )
+      // ) {
+      //   //check phia tren
+      //   virtualPosition.y += TankSize - ObjectSize;
+      // }
+      if (mapMatch?.[targetPosition.y]?.[targetPosition.x + 1] !== null) {
+        //check ben phai
+        virtualPosition.x -= TankSize - ObjectSize + 1;
+      }
+      if (
+        ["B", "T", "W"].includes(
+          mapMatch?.[targetPosition.y + 1]?.[targetPosition.x + 1] as never
+        )
+      ) {
+        //check cheo duoi
+        if (mapMatch?.[targetPosition.y]?.[targetPosition.x + 1] === null) {
+          virtualPosition.x -= TankSize - ObjectSize + 1;
+        }
+        if (mapMatch?.[targetPosition.y + 1]?.[targetPosition.x] === null) {
+          virtualPosition.y -= TankSize - ObjectSize + 1;
+        }
+      }
+      // if (
+      //   ["B", "T", "W"].includes(
+      //     mapMatch?.[targetPosition.y]?.[targetPosition.x - 1] as never
+      //   )
+      // ) {
+      //   //check ben trai
+      //   virtualPosition.x += TankSize - ObjectSize;
+      // }
+      //TODO
+      while (queue.length) {
+        const tankPosition = queue.shift();
+        if (tankPosition && tankPosition.x && tankPosition.y) {
+          if (
+            isOverlap(
+              tankPosition.x,
+              tankPosition.y,
+              virtualPosition.x,
+              virtualPosition.y,
+              TankSize
+            ) &&
+            Math.abs(tankPosition.x - virtualPosition.x) <= 3 &&
+            Math.abs(tankPosition.y - virtualPosition.y) <= 3
+          ) {
+            result.push(...revertRoad(findRoad, tankPosition as any));
+            break;
+          }
+        }
+        if ((tankPosition?.ms ?? 9999) >= 500) {
+          continue;
+        }
+        for (let i = 0; i < orients.length; i++) {
+          const orient = orients[i];
+          let moveNextPosition = tankPositionAtNextTime(
+            tankPosition as never,
+            orient as never
+          );
+          if (
+            findRoad?.[moveNextPosition.y]?.[moveNextPosition.x] ||
+            checkTankPositionIsObject(moveNextPosition as never) ||
+            moveNextPosition!.x >= 848 ||
+            moveNextPosition!.x < 20 ||
+            moveNextPosition!.y >= 648 ||
+            moveNextPosition!.y < 20
+          ) {
+            continue;
+          }
+          //TODO
+          // for (let step = TankSpeed; step >= 1; step--) {
+          //   moveNextPosition = tankPositionDownStep(
+          //     tankPosition as never,
+          //     orient as never,
+          //     step
+          //   );
+          //   if (!checkTankPositionIsObject(moveNextPosition as never)) {
+          //     break;
+          //   }
+          // }
+          if (!findRoad?.[moveNextPosition.y]) {
+            findRoad[moveNextPosition.y] = {};
+          }
+          findRoad[moveNextPosition.y][moveNextPosition.x] = unOrients[i];
+          queue.push({
+            ...moveNextPosition,
+            ms: (tankPosition?.ms ?? 0) + TankTimeSpeed,
+          });
+        }
+      }
+    }
+  } catch (e) {
+    console.log(e);
   }
   return result;
 };
@@ -535,10 +762,10 @@ export const findRoadToTarget = (
           if (
             !checkTankPositionIsObject(moveNextPosition as never) &&
             !(
-              tankPosition!.x >= 848 ||
-              tankPosition!.x < 20 ||
-              tankPosition!.y >= 648 ||
-              tankPosition!.y < 20
+              moveNextPosition!.x >= 848 ||
+              moveNextPosition!.x < 20 ||
+              moveNextPosition!.y >= 648 ||
+              moveNextPosition!.y < 20
             )
           ) {
             if (!findRoad?.[moveNextPosition.y]?.[moveNextPosition.x]) {
@@ -598,10 +825,10 @@ export const dodgeBullets = (
           tankPosition!.ms
         ) &&
         !(
-          tankPosition!.x >= 848 ||
-          tankPosition!.x < 20 ||
-          tankPosition!.y >= 648 ||
-          tankPosition!.y < 20
+          moveNextPosition!.x >= 848 ||
+          moveNextPosition!.x < 20 ||
+          moveNextPosition!.y >= 648 ||
+          moveNextPosition!.y < 20
         )
       ) {
         if (!dodgeRoad?.[moveNextPosition.y]?.[moveNextPosition.x]) {
