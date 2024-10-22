@@ -11,9 +11,9 @@ services:
       mode: replicated
       replicas: 1
       resources:
-      limits:
-        cpus: '1'
-        memory: 1Gi
-      reservations:
-        cpus: '0.25'
-        memory: 250M
+        limits:
+          cpus: '1'
+          memory: 1Gi
+        reservations:
+          cpus: '0.25'
+          memory: 250M
