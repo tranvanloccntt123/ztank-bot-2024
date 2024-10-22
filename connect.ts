@@ -32,6 +32,8 @@ import {
   resetShootPromise,
   saveIsShootAble,
   resolveShootPromise,
+  targetTankUID,
+  saveTargetTankUID,
 } from "./store";
 
 const socket = io(process?.env?.SOCKET_SERVER ?? SERVER_1, {
@@ -116,12 +118,15 @@ socket.on(
     isReboring(data?.killed?.name);
     setTimeout(() => {
       clearIsReboring(data?.killed?.name);
-    }, 2800);
+    }, 3000);
     if (data.killed?.name === MY_NAME) {
       clearRoad();
       console.log("KILLED", data.bullet);
       console.log("LOCAL", myTank);
       // console.log("SOCKET", data.killed);
+    }
+    if (data.killed?.name === targetTankUID) {
+      saveTargetTankUID("");
     }
     // saveTanks([data.killed]);
     // saveTanks([data.killer]);
@@ -130,6 +135,7 @@ socket.on(
 
 socket.on(Events.Shoot, (data: Bullet) => {
   const name = tanksId.get(data.uid);
+  // console.log(data);
   const tank = tanks.get(name ?? "");
   if (tank) {
     saveTanks([{ ...tank, x: data.x, y: data.y }]);

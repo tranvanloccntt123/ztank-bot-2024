@@ -1,78 +1,80 @@
 import _ from "lodash";
-import { moveTank, shoot } from "./connect";
-import {
-  BulletSize,
-  ShootAbleTime,
-  MapSize,
-  TankTimeSpeed,
-  MY_NAME,
-} from "./constants";
+import { shoot } from "./connect";
+import { BulletSize, MapSize, TankTimeSpeed, MY_NAME } from "./constants";
 import {
   MovePriority,
   bullets,
-  clearRoad,
   dodgeBullets,
   findRoadToTarget,
   findTargetTank,
+  hasBlockBetweenObjects,
   hasBlockPosition,
   isReborn,
   isShootAble,
   mapMatch,
   movePromise,
   myTank,
-  resetRunningPromise,
-  resolveRunningPromise,
   road,
-  runningPromise,
   saveRoad,
-  shootPromise,
   tanks,
   targetTankUID,
 } from "./store";
 import {
-  bulletPositionAtPlustime,
   bulletPositionAtRunTime,
-  checkBulletInsideTank,
-  checkBulletRunningToTank,
-  isSameHorizontalAxisWithSize,
-  isSameVerticalAxisWithSize,
+  otherTankInsideHorizontal,
+  otherTankInsideVertical,
   sleep,
-  tankAtNextTime,
 } from "./utils";
 
 export const startTrickShootSystem = async () => {
-  while (true) {
+  setInterval(() => {
     try {
-      await shootPromise;
-      await movePromise;
-      if (isShootAble && myTank && myTank.x && myTank.y) {
+      if (
+        (myTank?.shootable || isShootAble) &&
+        myTank &&
+        myTank.x &&
+        myTank.y &&
+        road.priority !== MovePriority.SHOOT
+      ) {
         tanks.forEach((tank) => {
-          if (!myTank?.x || !myTank?.y || tank.name === MY_NAME) {
+          if (
+            !myTank?.x ||
+            !myTank?.y ||
+            tank.name === MY_NAME ||
+            !tank.isAlive ||
+            isReborn.has(tank.name)
+          ) {
             return;
           }
           //Vertical
-          if (isSameVerticalAxisWithSize(tank, myTank)) {
+          if (
+            otherTankInsideVertical(tank) &&
+            !hasBlockBetweenObjects(myTank, tank)
+          ) {
             if (myTank?.orient === "UP" && tank.y < (myTank?.y ?? 0)) {
-              shoot();
+              saveRoad(MovePriority.SHOOT, ["UP"]);
             } else if (myTank?.orient === "DOWN" && tank.y > (myTank?.y ?? 0)) {
-              shoot();
+              saveRoad(MovePriority.SHOOT, ["DOWN"]);
             } else {
               if (tank.y < (myTank?.y ?? 0)) {
-                saveRoad(MovePriority.SHOOT, ["DOWN"]);
-              } else {
                 saveRoad(MovePriority.SHOOT, ["UP"]);
+              } else {
+                saveRoad(MovePriority.SHOOT, ["DOWN"]);
               }
             }
           }
           //Horizontal
-          if (isSameHorizontalAxisWithSize(tank, myTank)) {
+          if (
+            otherTankInsideHorizontal(tank) &&
+            !hasBlockBetweenObjects(myTank, tank)
+          ) {
             if (myTank?.orient === "LEFT" && tank.x < (myTank?.x ?? 0)) {
-              shoot();
+              saveRoad(MovePriority.SHOOT, ["LEFT"]);
             } else if (
               myTank?.orient === "RIGHT" &&
               tank.x > (myTank?.x ?? 0)
             ) {
-              shoot();
+              saveRoad(MovePriority.SHOOT, ["RIGHT"]);
             } else {
               if (tank.x < (myTank?.x ?? 0)) {
                 saveRoad(MovePriority.SHOOT, ["LEFT"]);
@@ -84,11 +86,9 @@ export const startTrickShootSystem = async () => {
         });
       }
     } catch (e) {
-      console.log("startTrickShootSystem", e);
-    } finally {
-      await sleep(2);
+      console.log(e);
     }
-  }
+  }, 2);
 };
 
 let countDownMove: any = null;
@@ -157,10 +157,13 @@ export const stopIntervalDodge = () => {
 };
 
 export const startDodgeRoadSystem = async () => {
-  while (true) {
-    await movePromise;
+  setInterval(() => {
     try {
-      if (myTank && !isReborn.has(myTank.name)) {
+      if (
+        myTank &&
+        !isReborn.has(myTank.name) &&
+        road.priority !== MovePriority.DODGE
+      ) {
         if (bullets.size) {
           const _dodge = dodgeBullets(
             { x: myTank.x, y: myTank.y, orient: myTank.orient },
@@ -178,70 +181,8 @@ export const startDodgeRoadSystem = async () => {
     } catch (e) {
       console.log(e);
     } finally {
-      await sleep(2);
     }
-  }
-};
-
-let intervalRunning: any = null;
-
-export const stopIntervalRunning = () => {
-  clearInterval(intervalRunning);
-};
-
-export const runSystem = (road: { priority: number; data: Array<Orient> }) => {
-  // console.log(
-  //   road.priority === 0
-  //     ? "DODGE"
-  //     : road.priority === 1
-  //     ? "SHOOT"
-  //     : road.priority === 2
-  //     ? "NORMAL"
-  //     : "NOTHING"
-  // );
-  intervalRunning = setInterval(async () => {
-    if (road.data.length) {
-      resetRunningPromise();
-      await movePromise;
-      let i = 0;
-      while (i < road.data.length) {
-        const orient = road.data[i];
-        let canMoveNextPosition = true;
-        if (myTank && road.priority !== MovePriority.DODGE) {
-          const nextPosition = tankAtNextTime(myTank, orient);
-          bullets.forEach((bullet) => {
-            const position = bulletPositionAtPlustime(bullet, TankTimeSpeed);
-            if (
-              bullet &&
-              bullet.x &&
-              bullet.y &&
-              nextPosition.x &&
-              nextPosition.y &&
-              position.x &&
-              position.y
-            ) {
-              if (
-                checkBulletRunningToTank(nextPosition, {
-                  ...position,
-                  orient: bullet.orient,
-                }) ||
-                checkBulletInsideTank(nextPosition, position)
-              ) {
-                canMoveNextPosition = false;
-              }
-            }
-          });
-        }
-        if (canMoveNextPosition) {
-          moveTank(orient);
-          i++;
-          await movePromise;
-        }
-      }
-      clearRoad();
-      resolveRunningPromise(true);
-    }
-  }, 17);
+  }, 2);
 };
 
 let intervalFindTargetRoad: any = null;
@@ -251,7 +192,7 @@ export const stopIntervalFindTargetRoad = () => {
 };
 
 export const findTargetSystem = async () => {
-  while (true) {
+  setInterval(async () => {
     if (targetTankUID === "") {
       findTargetTank();
     }
@@ -276,8 +217,6 @@ export const findTargetSystem = async () => {
       }
     } catch (e) {
       console.log(e);
-    } finally {
-      await sleep(TankTimeSpeed);
     }
-  }
+  }, TankTimeSpeed);
 };

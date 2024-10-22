@@ -18,6 +18,7 @@ import {
   hasObjectPosition,
   isReborn,
   mapMatch,
+  myTank,
 } from "./store";
 import * as _ from "lodash";
 
@@ -352,51 +353,6 @@ export const isSameVerticalAxisWithSize = (
 };
 
 export const checkTankPositionIsObject = (tankPosition: Position) => {
-  if (tankPosition.x === 546 && tankPosition.y === 472) {
-    console.log(
-      1,
-      hasBlockPosition({
-        x: tankPosition.x,
-        y: tankPosition.y,
-      }),
-      hasBlockPosition({
-        x: tankPosition.x + TankSize,
-        y: tankPosition.y,
-      }),
-      hasBlockPosition({
-        x: tankPosition.x + TankSize,
-        y: tankPosition.y + TankSize,
-      }),
-      hasBlockPosition({
-        x: tankPosition.x,
-        y: tankPosition.y + TankSize,
-      }),
-      hasBlockPosition({
-        x: tankPosition.x + TankSize / 2,
-        y: tankPosition.y + TankSize / 2,
-      }),
-      hasObjectPosition({
-        x: tankPosition.x,
-        y: tankPosition.y,
-      }),
-      hasObjectPosition({
-        x: tankPosition.x + TankSize,
-        y: tankPosition.y,
-      }),
-      hasObjectPosition({
-        x: tankPosition.x + TankSize,
-        y: tankPosition.y + TankSize,
-      }),
-      hasObjectPosition({
-        x: tankPosition.x,
-        y: tankPosition.y + TankSize,
-      }),
-      hasObjectPosition({
-        x: tankPosition.x + TankSize / 2,
-        y: tankPosition.y + TankSize / 2,
-      })
-    );
-  }
   return (
     hasBlockPosition({
       x: tankPosition.x,
@@ -488,86 +444,118 @@ export const checkBulletInsideTank = (
   return false;
 };
 
+export const bulletInsideTankVertical = (
+  tankPosition: Position,
+  bulletPosition: Position
+) => {
+  return (
+    _.inRange(
+      bulletPosition?.x ?? 0,
+      tankPosition.x - 1,
+      tankPosition.x + TankSize + 2
+    ) ||
+    _.inRange(
+      (bulletPosition?.x ?? 0) + BulletSize,
+      tankPosition.x - 1,
+      tankPosition.x + TankSize + 1 + 2
+    )
+  );
+};
+
+export const otherTankInsideVertical = (tank: Position) => {
+  if (!myTank || !myTank.x || !myTank.y) {
+    return false;
+  }
+  return (
+    _.inRange(
+      tank?.x ?? 0,
+      myTank.x + (TankSize / 2 - BulletSize / 2),
+      myTank.x + TankSize - (TankSize / 2 - BulletSize / 2)
+    ) ||
+    _.inRange(
+      (tank?.x ?? 0) + TankSize,
+      myTank.x + (TankSize / 2 - BulletSize / 2),
+      myTank.x + TankSize - (TankSize / 2 - BulletSize / 2)
+    )
+  );
+};
+
+export const otherTankInsideHorizontal = (tank: Position) => {
+  if (!myTank || !myTank.x || !myTank.y) {
+    return false;
+  }
+  return (
+    _.inRange(
+      tank?.y ?? 0,
+      myTank.y + (TankSize / 2 - BulletSize / 2),
+      myTank.y + TankSize - (TankSize / 2 - BulletSize / 2)
+    ) ||
+    _.inRange(
+      (tank?.y ?? 0) + TankSize,
+      myTank.y + (TankSize / 2 - BulletSize / 2),
+      myTank.y + TankSize - (TankSize / 2 - BulletSize / 2)
+    )
+  );
+};
+
+export const bulletInsideTankHorizontal = (
+  tankPosition: Position,
+  bulletPosition: Position
+) => {
+  return (
+    _.inRange(
+      bulletPosition?.y ?? 0,
+      tankPosition.y - 1,
+      tankPosition.y + TankSize + 2
+    ) ||
+    _.inRange(
+      (bulletPosition?.y ?? 0) + BulletSize,
+      tankPosition.y - 1,
+      tankPosition.y + TankSize + 2
+    )
+  );
+};
+
 export const checkBulletRunningToTank = (
   tankPosition: Position,
   bulletPosition: Position & { orient: Orient },
-  distance = TankSize * 5
+  distance = TankSize * 7
 ) => {
   if (
-    isSameVerticalAxisWithSize(
-      {
-        x: Math.round(tankPosition.x),
-        y: Math.round(tankPosition.y),
-        size: TankSize,
-      },
-      {
-        x: Math.round(bulletPosition.x),
-        y: Math.round(bulletPosition.y),
-        size: BulletSize,
-      }
-    ) &&
+    bulletInsideTankVertical(tankPosition, bulletPosition) &&
     ["DOWN", "UP"].includes(bulletPosition.orient)
   ) {
     if (
       bulletPosition.orient === "DOWN" &&
       bulletPosition.y <= tankPosition.y &&
-      tankPosition.y - bulletPosition.y < distance &&
-      !hasBlockBetweenObjects(
-        { ...tankPosition, size: TankSize },
-        { ...bulletPosition, size: BulletSize }
-      )
+      tankPosition.y - bulletPosition.y < distance
     ) {
       return true;
     }
     if (
       bulletPosition.orient === "UP" &&
       bulletPosition.y >= tankPosition.y &&
-      bulletPosition.y - tankPosition.y < distance &&
-      !hasBlockBetweenObjects(
-        { ...tankPosition, size: TankSize },
-        { ...bulletPosition, size: BulletSize }
-      )
+      bulletPosition.y - tankPosition.y < distance
     ) {
       return true;
     }
     return false;
   }
   if (
-    isSameHorizontalAxisWithSize(
-      {
-        x: Math.round(tankPosition.x),
-        y: Math.round(tankPosition.y),
-        size: TankSize,
-      },
-      {
-        x: Math.round(bulletPosition.x),
-        y: Math.round(bulletPosition.y),
-        size: BulletSize,
-      }
-    ) &&
+    bulletInsideTankHorizontal(tankPosition, bulletPosition) &&
     ["RIGHT", "LEFT"].includes(bulletPosition.orient)
   ) {
     if (
       bulletPosition.orient === "RIGHT" &&
       bulletPosition.x <= tankPosition.x &&
-      tankPosition.x - bulletPosition.x < distance &&
-      !hasBlockBetweenObjects(
-        { ...tankPosition, size: TankSize },
-        { ...bulletPosition, size: BulletSize },
-        true
-      )
+      tankPosition.x - bulletPosition.x < distance
     ) {
       return true;
     }
     if (
       bulletPosition.orient === "LEFT" &&
       bulletPosition.x >= tankPosition.x &&
-      tankPosition.x - bulletPosition.x < distance &&
-      !hasBlockBetweenObjects(
-        { ...tankPosition, size: TankSize },
-        { ...bulletPosition, size: BulletSize },
-        true
-      )
+      tankPosition.x - bulletPosition.x < distance
     ) {
       return true;
     }

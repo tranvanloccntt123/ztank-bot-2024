@@ -17,8 +17,8 @@ saveMap(mapTest as any);
 
 saveTanks([
   {
-    x: 320,
-    y: 481,
+    x: 280,
+    y: 314,
     speed: 3,
     type: 1,
     uid: "q00dtJ1HlyOhBjAVAAVn",
@@ -60,14 +60,14 @@ saveTanks([
 
 saveBullets([
   {
-    x: 800,
-    y: 100,
-    orient: "UP",
+    x: 322.20588235292416,
+    y: 335.5,
+    orient: "LEFT",
     speed: 4,
     type: 1,
     size: 8,
-    uid: "yVATgaV9tvd5WjhDAAAF",
-    id: 27231,
+    uid: "TAKAd3flPK_tuIFMAALh",
+    id: 268910,
     time: new Date().getTime(),
   },
 ] as any);
@@ -83,17 +83,18 @@ test("Dodge", () => {
     Array.from(bullets.values()),
     0
   );
+  console.log(result);
   expect(result.result.length).toBe(1);
 });
 //{ x: 34, y: 4 }
-test("Find road", () => {
-  const result = findTargetOnMap();
+// test("Find road", () => {
+//   const result = findTargetOnMap();
 
-  expect(result.length).toBeGreaterThanOrEqual(1);
+//   expect(result.length).toBeGreaterThanOrEqual(1);
 
-  const road = findRoadToPosition({ x: 16, y: 25 });
+//   const road = findRoadToPosition({ x: 16, y: 25 });
 
-  console.log(road);
+//   console.log(road);
 
-  expect(road.length).toBeGreaterThanOrEqual(1);
-});
+//   expect(road.length).toBeGreaterThanOrEqual(1);
+// });

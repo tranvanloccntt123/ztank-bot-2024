@@ -7,7 +7,6 @@ import {
   TankSpeed,
   TankTimeSpeed,
 } from "./constants";
-import { runSystem, stopIntervalRunning } from "./tankSystem";
 import {
   bulletPositionAtRunTime,
   safeArea,
@@ -142,13 +141,12 @@ export const clearRoad = () => {
   road.priority = 3;
   road.data = [];
   road.index = -1;
-  stopIntervalRunning();
 };
 
 export const findTargetTank = () => {
   if (myTank && myTank.x && myTank.y && tanks.size) {
     const _tanks = Array.from(tanks.values())
-      .filter((tank) => tank.name !== MY_NAME)
+      .filter((tank) => tank.name !== MY_NAME && !isReborn.has(tank.name))
       .sort((a, b) => {
         const aPosition = euclideanDistance(
           { x: a.x, y: a.y },
@@ -739,6 +737,7 @@ export const findRoadToTarget = (
           if (
             (isVertical || isHorizontal) &&
             euclideanDistance(tankPosition, tank) <= (targetDistance ?? 60) &&
+            euclideanDistance(tankPosition, tank) >= TankSize &&
             !hasBlockBetweenObjects(
               { x: tank.x, y: tank.y, size: TankSize },
               {
