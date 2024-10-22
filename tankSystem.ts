@@ -1,8 +1,8 @@
 import _ from "lodash";
-import { shoot } from "./connect";
 import { BulletSize, MapSize, TankTimeSpeed, MY_NAME } from "./constants";
 import {
   MovePriority,
+  banTankByName,
   bullets,
   dodgeBullets,
   findRoadToTarget,
@@ -11,11 +11,13 @@ import {
   hasBlockPosition,
   isReborn,
   isShootAble,
+  lastMoveTime,
   mapMatch,
-  movePromise,
   myTank,
   road,
+  saveBanTankByName,
   saveRoad,
+  saveTargetTankUID,
   tanks,
   targetTankUID,
 } from "./store";
@@ -23,7 +25,6 @@ import {
   bulletPositionAtRunTime,
   otherTankInsideHorizontal,
   otherTankInsideVertical,
-  sleep,
 } from "./utils";
 
 export const startTrickShootSystem = async () => {
@@ -159,11 +160,7 @@ export const stopIntervalDodge = () => {
 export const startDodgeRoadSystem = async () => {
   setInterval(() => {
     try {
-      if (
-        myTank &&
-        !isReborn.has(myTank.name) &&
-        road.priority !== MovePriority.DODGE
-      ) {
+      if (myTank && !isReborn.has(myTank.name)) {
         if (bullets.size) {
           const _dodge = dodgeBullets(
             { x: myTank.x, y: myTank.y, orient: myTank.orient },
@@ -213,6 +210,18 @@ export const findTargetSystem = async () => {
             MovePriority.NORMAL,
             _road.slice(1).map((v) => v.orient)
           );
+        } else {
+          if (new Date().getTime() - lastMoveTime >= 500) {
+            const tankNeedBan = tanks.get(targetTankUID)?.name ?? "";
+            saveBanTankByName(tankNeedBan);
+            console.log("BANED", tankNeedBan);
+            saveTargetTankUID("");
+            setTimeout(() => {
+              if (tankNeedBan === banTankByName) {
+                saveBanTankByName("");
+              }
+            }, 200);
+          }
         }
       }
     } catch (e) {

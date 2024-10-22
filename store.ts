@@ -77,6 +77,10 @@ export let targetTankUID: string = "";
 
 export let loadedMap = false;
 
+export let lastMoveTime = 0;
+
+export let banTankByName: string = "";
+
 /*
   Priority:
   - 0: dodge
@@ -143,10 +147,22 @@ export const clearRoad = () => {
   road.index = -1;
 };
 
+export const saveLastMoveTime = (timestamp: number) =>
+  (lastMoveTime = timestamp);
+
+export const saveBanTankByName = (name: string) => {
+  banTankByName = name;
+};
+
 export const findTargetTank = () => {
   if (myTank && myTank.x && myTank.y && tanks.size) {
     const _tanks = Array.from(tanks.values())
-      .filter((tank) => tank.name !== MY_NAME && !isReborn.has(tank.name))
+      .filter(
+        (tank) =>
+          tank.name !== MY_NAME &&
+          !isReborn.has(tank.name) &&
+          tank.name !== banTankByName
+      )
       .sort((a, b) => {
         const aPosition = euclideanDistance(
           { x: a.x, y: a.y },

@@ -34,6 +34,8 @@ import {
   resolveShootPromise,
   targetTankUID,
   saveTargetTankUID,
+  saveLastMoveTime,
+  saveBanTankByName,
 } from "./store";
 
 const socket = io(process?.env?.SOCKET_SERVER ?? SERVER_1, {
@@ -100,6 +102,9 @@ socket.on(Events.Reborn, (data: Tank) => {
 
 socket.on(Events.Move, (data: Tank) => {
   saveTanks([data]);
+  if (data.name === MY_NAME) {
+    saveLastMoveTime(new Date().getTime());
+  }
 });
 
 socket.on(
@@ -121,15 +126,13 @@ socket.on(
     }, 3000);
     if (data.killed?.name === MY_NAME) {
       clearRoad();
-      console.log("KILLED", data.bullet);
-      console.log("LOCAL", myTank);
-      // console.log("SOCKET", data.killed);
+      saveTargetTankUID("");
+      saveBanTankByName("");
     }
     if (data.killed?.name === targetTankUID) {
       saveTargetTankUID("");
+      clearRoad();
     }
-    // saveTanks([data.killed]);
-    // saveTanks([data.killer]);
   }
 );
 
