@@ -4,7 +4,6 @@ import {
   MapSize,
   ObjectSize,
   TankSize,
-  TankSpeed,
   TankTimeSpeed,
 } from "./constants";
 import {
@@ -17,9 +16,6 @@ import {
   tankPositionAtNextTime,
   isSameHorizontalAxisWithSize,
   isSameVerticalAxisWithSize,
-  mapIndexOnMapMatch,
-  isOverlap,
-  tankPositionDownStep,
 } from "./utils";
 import * as _ from "lodash";
 
@@ -49,10 +45,6 @@ export let objectPositionVertical: Record<number, Array<number>> = {};
 
 export let isFinish = true;
 
-export let prevPosition = initPosition(-1, -1);
-
-export let prevOrient: Orient | null = null;
-
 export let runTime = new Date().getTime();
 
 export let resolveStartPromise: any = null;
@@ -63,13 +55,9 @@ export let resolveMovePromise: any = null;
 
 export let resolveJoiningPromise: any = null;
 
-export let resolveRunningPromise: any = null;
-
 export let isShootAble: boolean = true;
 
 export let isMoveAble: boolean = true;
-
-export let isDodgeAble: boolean = false;
 
 export let isJoinning: boolean = false;
 
@@ -119,10 +107,6 @@ export let joiningPromise = new Promise<boolean>(
   (resolve) => (resolveJoiningPromise = resolve)
 );
 
-export let runningPromise = new Promise<boolean>(
-  (resolve) => (resolveRunningPromise = resolve)
-);
-
 export const resetShootPromise = () => {
   shootPromise = new Promise<boolean>(
     (resolve) => (resolveShootPromise = resolve)
@@ -132,12 +116,6 @@ export const resetShootPromise = () => {
 export const resetMovePromise = () => {
   movePromise = new Promise<boolean>(
     (resolve) => (resolveMovePromise = resolve)
-  );
-};
-
-export const resetRunningPromise = () => {
-  runningPromise = new Promise<boolean>(
-    (resolve) => (resolveRunningPromise = resolve)
   );
 };
 
@@ -191,12 +169,10 @@ export const saveRoad = (priority: number, data: Array<Orient>) => {
   try {
     if (data.length) {
       if (priority < road.priority) {
-        resetRunningPromise();
         road.priority = priority;
         road.data = data.concat();
         road.index = 0;
       } else if (!Boolean(road.data.length)) {
-        resetRunningPromise();
         road.priority = priority;
         road.data = data.concat();
         road.index = 0;
@@ -208,8 +184,6 @@ export const saveRoad = (priority: number, data: Array<Orient>) => {
 };
 
 export const saveIsJoinning = (_v: boolean) => (isJoinning = _v);
-
-export const saveIsDodgeAble = (_v: boolean) => (isDodgeAble = _v);
 
 export const saveIsMoveAble = (_v: boolean) => (isMoveAble = _v);
 
@@ -581,127 +555,6 @@ export const revertRoad = (
       ...prevPosition,
       orient: orients[findOrientIndex] ?? "null",
     } as never);
-  }
-  return result;
-};
-
-export const findRoadToPosition = (targetPosition: Position) => {
-  const result: Array<any> = [];
-  try {
-    const tankPosition = initPosition(myTank?.x ?? 0, myTank?.y ?? 0);
-    let findRoad: any = {
-      [tankPosition.y]: {
-        [tankPosition.x]: "ROOT",
-      },
-    };
-
-    if (targetPosition && myTank) {
-      const queue: Array<Position & { ms: number }> = [
-        { ...tankPosition, ms: 0 },
-      ];
-      let virtualPosition = {
-        x: Math.round(targetPosition.x * ObjectSize),
-        y: Math.round(targetPosition.y * ObjectSize),
-      };
-      if (mapMatch?.[targetPosition.y + 1]?.[targetPosition.x] !== null) {
-        //check phia duoi
-        virtualPosition.y -= TankSize - ObjectSize + 1;
-      }
-      // if (
-      //   ["B", "T", "W"].includes(
-      //     mapMatch?.[targetPosition.y - 1]?.[targetPosition.x] as never
-      //   )
-      // ) {
-      //   //check phia tren
-      //   virtualPosition.y += TankSize - ObjectSize;
-      // }
-      if (mapMatch?.[targetPosition.y]?.[targetPosition.x + 1] !== null) {
-        //check ben phai
-        virtualPosition.x -= TankSize - ObjectSize + 1;
-      }
-      if (
-        ["B", "T", "W"].includes(
-          mapMatch?.[targetPosition.y + 1]?.[targetPosition.x + 1] as never
-        )
-      ) {
-        //check cheo duoi
-        if (mapMatch?.[targetPosition.y]?.[targetPosition.x + 1] === null) {
-          virtualPosition.x -= TankSize - ObjectSize + 1;
-        }
-        if (mapMatch?.[targetPosition.y + 1]?.[targetPosition.x] === null) {
-          virtualPosition.y -= TankSize - ObjectSize + 1;
-        }
-      }
-      // if (
-      //   ["B", "T", "W"].includes(
-      //     mapMatch?.[targetPosition.y]?.[targetPosition.x - 1] as never
-      //   )
-      // ) {
-      //   //check ben trai
-      //   virtualPosition.x += TankSize - ObjectSize;
-      // }
-      //TODO
-      while (queue.length) {
-        const tankPosition = queue.shift();
-        if (tankPosition && tankPosition.x && tankPosition.y) {
-          if (
-            isOverlap(
-              tankPosition.x,
-              tankPosition.y,
-              virtualPosition.x,
-              virtualPosition.y,
-              TankSize
-            ) &&
-            Math.abs(tankPosition.x - virtualPosition.x) <= 3 &&
-            Math.abs(tankPosition.y - virtualPosition.y) <= 3
-          ) {
-            result.push(...revertRoad(findRoad, tankPosition as any));
-            break;
-          }
-        }
-        if ((tankPosition?.ms ?? 9999) >= 500) {
-          continue;
-        }
-        for (let i = 0; i < orients.length; i++) {
-          const orient = orients[i];
-          let moveNextPosition = tankPositionAtNextTime(
-            tankPosition as never,
-            orient as never
-          );
-          if (
-            findRoad?.[moveNextPosition.y]?.[moveNextPosition.x] ||
-            checkTankPositionIsObject(moveNextPosition as never) ||
-            moveNextPosition!.x >= 848 ||
-            moveNextPosition!.x < 20 ||
-            moveNextPosition!.y >= 648 ||
-            moveNextPosition!.y < 20
-          ) {
-            continue;
-          }
-          //TODO
-          // for (let step = TankSpeed; step >= 1; step--) {
-          //   moveNextPosition = tankPositionDownStep(
-          //     tankPosition as never,
-          //     orient as never,
-          //     step
-          //   );
-          //   if (!checkTankPositionIsObject(moveNextPosition as never)) {
-          //     break;
-          //   }
-          // }
-          if (!findRoad?.[moveNextPosition.y]) {
-            findRoad[moveNextPosition.y] = {};
-          }
-          findRoad[moveNextPosition.y][moveNextPosition.x] = unOrients[i];
-          queue.push({
-            ...moveNextPosition,
-            ms: (tankPosition?.ms ?? 0) + TankTimeSpeed,
-          });
-        }
-      }
-    }
-  } catch (e) {
-    console.log(e);
   }
   return result;
 };

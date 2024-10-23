@@ -28,7 +28,6 @@ import {
   resolveJoiningPromise,
   isJoinning,
   clearRoad,
-  resolveRunningPromise,
   resetShootPromise,
   saveIsShootAble,
   resolveShootPromise,
@@ -60,10 +59,6 @@ export const shoot = () => {
   resetShootPromise();
   saveIsShootAble(false);
   socket.emit(EmitEvent.Shoot);
-  setTimeout(() => {
-    resolveShootPromise(true);
-    saveIsShootAble(true);
-  }, ShootAbleTime);
 };
 
 export const moveTank = (orient: Orient) => {
@@ -144,6 +139,10 @@ socket.on(Events.Shoot, (data: Bullet) => {
     saveTanks([{ ...tank, x: data.x, y: data.y }]);
   }
   saveBullets([{ ...data, time: new Date().getTime() }]);
+  if (data.uid === myTank?.uid) {
+    resolveShootPromise(true);
+    saveIsShootAble(true);
+  }
 });
 
 socket.on(Events.UserDisconnect, (data: string) => {
