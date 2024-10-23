@@ -132,14 +132,14 @@ export const saveBanTankByName = (name: string) => {
   banTankByName = name;
 };
 
-export const findTargetTank = () => {
+export const findTargetTank = (_banName: string = "") => {
   if (myTank && myTank.x && myTank.y && tanks.size) {
     const _tanks = Array.from(tanks.values())
       .filter(
         (tank) =>
           tank.name !== MY_NAME &&
           !isReborn.has(tank.name) &&
-          tank.name !== banTankByName
+          tank.name !== _banName
       )
       .sort((a, b) => {
         const aPosition = euclideanDistance(
@@ -156,7 +156,7 @@ export const findTargetTank = () => {
         return aPosition - bPosition;
       });
     if (_tanks.length) {
-      saveTargetTankUID(_tanks[0].name);
+      saveTargetTankUID(_tanks?.[0]?.name ?? "");
     }
   }
 };

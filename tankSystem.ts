@@ -1,5 +1,11 @@
 import _ from "lodash";
-import { BulletSize, MapSize, TankTimeSpeed, MY_NAME } from "./constants";
+import {
+  BulletSize,
+  MapSize,
+  TankTimeSpeed,
+  MY_NAME,
+  TankSize,
+} from "./constants";
 import {
   MovePriority,
   bullets,
@@ -58,7 +64,18 @@ export const startTrickShootSystem = async () => {
             //Vertical
             if (
               otherTankInsideVertical(tank) &&
-              !hasBlockBetweenObjects(myTank, tank)
+              !hasBlockBetweenObjects(
+                {
+                  x: myTank.x + (TankSize / 2 - BulletSize / 2) - 2,
+                  y: myTank.y,
+                  size: BulletSize,
+                },
+                {
+                  x: myTank.x + (TankSize / 2 - BulletSize / 2) - 2,
+                  y: tank.y,
+                  size: BulletSize,
+                }
+              )
             ) {
               if (myTank?.orient === "UP" && tank.y < (myTank?.y ?? 0)) {
                 saveRoad(MovePriority.SHOOT, ["UP"]);
@@ -78,7 +95,18 @@ export const startTrickShootSystem = async () => {
             //Horizontal
             if (
               otherTankInsideHorizontal(tank) &&
-              !hasBlockBetweenObjects(myTank, tank)
+              !hasBlockBetweenObjects(
+                {
+                  x: myTank.x,
+                  y: myTank.y + (TankSize / 2 - BulletSize / 2) - 2,
+                  size: BulletSize,
+                },
+                {
+                  x: tank.x,
+                  y: myTank.y + (TankSize / 2 - BulletSize / 2) - 2,
+                  size: BulletSize,
+                }
+              )
             ) {
               if (myTank?.orient === "LEFT" && tank.x < (myTank?.x ?? 0)) {
                 saveRoad(MovePriority.SHOOT, ["LEFT"]);
@@ -211,18 +239,20 @@ export const findTargetSystem = async () => {
         road.priority > MovePriority.NORMAL &&
         road.data.length === 0
       ) {
-        if (targetTankUID === "") {
+        if (targetTankUID === "" || Boolean(targetTankUID) === false) {
           findTargetTank();
         }
         const _road = findRoadToTarget(
           { x: myTank.x, y: myTank.y, orient: myTank.orient },
           0
         );
-        if (_road.length >= 1) {
+        if (_road.length > 1) {
           saveRoad(
             MovePriority.NORMAL,
             _road.slice(1).map((v) => v.orient)
           );
+        } else {
+          findTargetTank(targetTankUID);
         }
       }
     } catch (e) {

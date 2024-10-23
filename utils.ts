@@ -467,13 +467,23 @@ export const otherTankInsideVertical = (tank: Position) => {
   return (
     _.inRange(
       tank?.x ?? 0,
-      myTank.x + (TankSize / 2 - BulletSize / 2),
-      myTank.x + TankSize - (TankSize / 2 - BulletSize / 2)
+      myTank.x + (TankSize / 2 - BulletSize / 2) - 2,
+      myTank.x + TankSize - (TankSize / 2 - BulletSize / 2) + 2
     ) ||
     _.inRange(
       (tank?.x ?? 0) + TankSize,
+      myTank.x + (TankSize / 2 - BulletSize / 2) - 2,
+      myTank.x + TankSize - (TankSize / 2 - BulletSize / 2) + 2
+    ) ||
+    _.inRange(
       myTank.x + (TankSize / 2 - BulletSize / 2),
-      myTank.x + TankSize - (TankSize / 2 - BulletSize / 2)
+      tank.x,
+      tank.x + TankSize
+    ) ||
+    _.inRange(
+      myTank.x + (TankSize / 2 - BulletSize / 2) + BulletSize,
+      tank.x,
+      tank.x + TankSize
     )
   );
 };
@@ -485,13 +495,23 @@ export const otherTankInsideHorizontal = (tank: Position) => {
   return (
     _.inRange(
       tank?.y ?? 0,
-      myTank.y + (TankSize / 2 - BulletSize / 2),
-      myTank.y + TankSize - (TankSize / 2 - BulletSize / 2)
+      myTank.y + (TankSize / 2 - BulletSize / 2) - 2,
+      myTank.y + TankSize - (TankSize / 2 - BulletSize / 2) + 2
     ) ||
     _.inRange(
       (tank?.y ?? 0) + TankSize,
+      myTank.y + (TankSize / 2 - BulletSize / 2) - 2,
+      myTank.y + TankSize - (TankSize / 2 - BulletSize / 2) + 2
+    ) ||
+    _.inRange(
       myTank.y + (TankSize / 2 - BulletSize / 2),
-      myTank.y + TankSize - (TankSize / 2 - BulletSize / 2)
+      tank.y,
+      tank.y + TankSize
+    ) ||
+    _.inRange(
+      myTank.y + (TankSize / 2 - BulletSize / 2) + BulletSize,
+      tank.y,
+      tank.y + TankSize
     )
   );
 };

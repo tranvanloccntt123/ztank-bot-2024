@@ -17,3 +17,6 @@ services:
         reservations:
           cpus: '0.25'
           memory: 250M
+    # volumes:
+    #   - ./:/app
+    
