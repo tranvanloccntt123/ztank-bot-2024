@@ -13,11 +13,9 @@ import {
 } from "./constants";
 import {
   bullets,
-  hasBlockBetweenObjects,
   hasBlockPosition,
   hasObjectPosition,
   isReborn,
-  mapMatch,
   myTank,
 } from "./store";
 import * as _ from "lodash";
@@ -254,7 +252,7 @@ export const euclideanDistance = (point1: Position, point2: Position) => {
   return Math.sqrt(xDistance * xDistance + yDistance * yDistance);
 };
 
-export const bulletPositionAtPlustime = (bullet: Bullet, ms: number) => {
+export const bulletPositionAtPlusTime = (bullet: Bullet, ms: number) => {
   const runTime = bullet.time + ms;
   const minusTime = runTime - bullet.time;
   const change = (minusTime / BulletTimeSpeed) * BulletSpeed;
@@ -328,10 +326,10 @@ export const isSameHorizontalAxisWithSize = (
   object2: Position & { size: number }
 ) => {
   // Tính biên trên và biên dưới của A và B
-  let topA = object1.y - object1.size / 2; // Biên trên của A
-  let bottomA = object1.y + object1.size / 2; // Biên dưới của A
-  let topB = object2.y - object2.size / 2; // Biên trên của B
-  let bottomB = object2.y + object2.size / 2; // Biên dưới của B
+  let topA = object1.y; // Biên trên của A
+  let bottomA = object1.y + object1.size; // Biên dưới của A
+  let topB = object2.y; // Biên trên của B
+  let bottomB = object2.y + object2.size; // Biên dưới của B
 
   // Kiểm tra xem các biên có chồng lên nhau không
   return !(bottomA < topB || bottomB < topA);
@@ -343,10 +341,10 @@ export const isSameVerticalAxisWithSize = (
   object2: Position & { size: number }
 ) => {
   // Tính biên trái và biên phải của A và B
-  let leftA = object1.x - object1.size / 2; // Biên trái của A
-  let rightA = object1.x + object1.size / 2; // Biên phải của A
-  let leftB = object2.x - object2.size / 2; // Biên trái của B
-  let rightB = object2.x + object2.size / 2; // Biên phải của B
+  let leftA = object1.x; // Biên trái của A
+  let rightA = object1.x + object1.size; // Biên phải của A
+  let leftB = object2.x; // Biên trái của B
+  let rightB = object2.x + object2.size; // Biên phải của B
 
   // Kiểm tra xem các biên có chồng lên nhau không
   return !(rightA < leftB || rightB < leftA);
@@ -564,20 +562,13 @@ export const checkBulletRunningToTank = (
   return false;
 };
 
-export const checkBlockBetweenBulletAndTank = (
-  tankPosition: Position,
-  bulletPosition: Position & { orient: Orient }
-) => {
-  return false;
-};
-
 export const safeArea = (
   tankPosition: Position,
   bullets: Array<Bullet>,
   ms: number
 ) => {
   for (const bullet of bullets) {
-    const bulletPosition = bulletPositionAtPlustime(bullet, ms);
+    const bulletPosition = bulletPositionAtPlusTime(bullet, ms);
     if (
       checkBulletRunningToTank(tankPosition, {
         ...bulletPosition,
@@ -596,12 +587,28 @@ export const checkBulletsInsideTank = (
   ms: number
 ) => {
   for (const bullet of bullets) {
-    const bulletPosition = bulletPositionAtPlustime(bullet, ms);
+    const bulletPosition = bulletPositionAtPlusTime(bullet, ms);
     if (checkBulletInsideTank(tankPosition, bulletPosition)) {
       return true;
     }
   }
   return false;
+};
+
+export const checkTankOverlap = (
+  tankPosition: Position,
+  tanks: Map<string, Tank>
+) => {
+  let overlap = false;
+  tanks.forEach((tank) => {
+    if (overlap === true) {
+      return;
+    }
+    if (isOverlap(tankPosition.x, tankPosition.y, tank.x, tank.y, TankSize)) {
+      overlap = true;
+    }
+  });
+  return overlap;
 };
 
 export const isOverlap = (
@@ -612,16 +619,16 @@ export const isOverlap = (
   size: number
 ) => {
   // Tính biên của A
-  let leftA = x1 - size / 2; // Biên trái của A
-  let rightA = x1 + size / 2; // Biên phải của A
-  let topA = y1 - size / 2; // Biên trên của A
-  let bottomA = y1 + size / 2; // Biên dưới của A
+  let leftA = x1; // Biên trái của A
+  let rightA = x1 + size; // Biên phải của A
+  let topA = y1; // Biên trên của A
+  let bottomA = y1 + size; // Biên dưới của A
 
   // Tính biên của B
-  let leftB = x2 - size / 2; // Biên trái của B
-  let rightB = x2 + size / 2; // Biên phải của B
-  let topB = y2 - size / 2; // Biên trên của B
-  let bottomB = y2 + size / 2; // Biên dưới của B
+  let leftB = x2; // Biên trái của B
+  let rightB = x2 + size; // Biên phải của B
+  let topB = y2; // Biên trên của B
+  let bottomB = y2 + size; // Biên dưới của B
 
   // Kiểm tra xem có chồng lấn trên cả trục x và trục y hay không
   let overlapX = !(rightA < leftB || rightB < leftA);

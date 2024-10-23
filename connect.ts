@@ -37,7 +37,11 @@ import {
   saveBanTankByName,
 } from "./store";
 
-const socket = io(process?.env?.SOCKET_SERVER ?? SERVER_1, {
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const socket = io(process?.env?.SOCKET_SERVER ?? SERVER_3, {
   auth: {
     token: Token,
   },
@@ -118,11 +122,14 @@ socket.on(
     isReboring(data?.killed?.name);
     setTimeout(() => {
       clearIsReboring(data?.killed?.name);
-    }, 3000);
+    }, 2800);
     if (data.killed?.name === MY_NAME) {
       clearRoad();
       saveTargetTankUID("");
       saveBanTankByName("");
+      console.log("BULLET LOCAL", bullets.get(data.bullet.id));
+      console.log(data.bullet);
+      console.log(data.killed);
     }
     if (data.killed?.name === targetTankUID) {
       saveTargetTankUID("");

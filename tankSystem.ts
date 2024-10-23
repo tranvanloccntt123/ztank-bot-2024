@@ -19,6 +19,7 @@ import {
 } from "./store";
 import {
   bulletPositionAtRunTime,
+  euclideanDistance,
   otherTankInsideHorizontal,
   otherTankInsideVertical,
 } from "./utils";
@@ -31,55 +32,70 @@ export const startTrickShootSystem = async () => {
         myTank &&
         myTank.x &&
         myTank.y &&
-        road.priority !== MovePriority.SHOOT
+        road.priority > MovePriority.SHOOT
       ) {
-        tanks.forEach((tank) => {
-          if (
-            !myTank?.x ||
-            !myTank?.y ||
-            tank.name === MY_NAME ||
-            isReborn.has(tank.name)
-          ) {
-            return;
-          }
-          //Vertical
-          if (
-            otherTankInsideVertical(tank) &&
-            !hasBlockBetweenObjects(myTank, tank)
-          ) {
-            if (myTank?.orient === "UP" && tank.y < (myTank?.y ?? 0)) {
-              saveRoad(MovePriority.SHOOT, ["UP"]);
-            } else if (myTank?.orient === "DOWN" && tank.y > (myTank?.y ?? 0)) {
-              saveRoad(MovePriority.SHOOT, ["DOWN"]);
-            } else {
-              if (tank.y < (myTank?.y ?? 0)) {
-                saveRoad(MovePriority.SHOOT, ["UP"]);
-              } else {
-                saveRoad(MovePriority.SHOOT, ["DOWN"]);
-              }
-            }
-          }
-          //Horizontal
-          if (
-            otherTankInsideHorizontal(tank) &&
-            !hasBlockBetweenObjects(myTank, tank)
-          ) {
-            if (myTank?.orient === "LEFT" && tank.x < (myTank?.x ?? 0)) {
-              saveRoad(MovePriority.SHOOT, ["LEFT"]);
-            } else if (
-              myTank?.orient === "RIGHT" &&
-              tank.x > (myTank?.x ?? 0)
+        Array.from(tanks.values())
+          .sort((a, b) => {
+            const aPosition = euclideanDistance(
+              { x: a.x, y: a.y },
+              { x: myTank!.x, y: myTank!.y }
+            );
+            const bPosition = euclideanDistance(
+              { x: b.x, y: b.y },
+              { x: myTank!.x, y: myTank!.y }
+            );
+            return aPosition - bPosition;
+          })
+          .forEach((tank) => {
+            if (
+              !myTank?.x ||
+              !myTank?.y ||
+              tank.name === MY_NAME ||
+              isReborn.has(tank.name)
             ) {
-              saveRoad(MovePriority.SHOOT, ["RIGHT"]);
-            } else {
-              if (tank.x < (myTank?.x ?? 0)) {
-                saveRoad(MovePriority.SHOOT, ["LEFT"]);
+              return;
+            }
+            //Vertical
+            if (
+              otherTankInsideVertical(tank) &&
+              !hasBlockBetweenObjects(myTank, tank)
+            ) {
+              if (myTank?.orient === "UP" && tank.y < (myTank?.y ?? 0)) {
+                saveRoad(MovePriority.SHOOT, ["UP"]);
+              } else if (
+                myTank?.orient === "DOWN" &&
+                tank.y > (myTank?.y ?? 0)
+              ) {
+                saveRoad(MovePriority.SHOOT, ["DOWN"]);
               } else {
-                saveRoad(MovePriority.SHOOT, ["RIGHT"]);
+                if (tank.y < (myTank?.y ?? 0)) {
+                  saveRoad(MovePriority.SHOOT, ["UP"]);
+                } else {
+                  saveRoad(MovePriority.SHOOT, ["DOWN"]);
+                }
               }
             }
-          }
-        });
+            //Horizontal
+            if (
+              otherTankInsideHorizontal(tank) &&
+              !hasBlockBetweenObjects(myTank, tank)
+            ) {
+              if (myTank?.orient === "LEFT" && tank.x < (myTank?.x ?? 0)) {
+                saveRoad(MovePriority.SHOOT, ["LEFT"]);
+              } else if (
+                myTank?.orient === "RIGHT" &&
+                tank.x > (myTank?.x ?? 0)
+              ) {
+                saveRoad(MovePriority.SHOOT, ["RIGHT"]);
+              } else {
+                if (tank.x < (myTank?.x ?? 0)) {
+                  saveRoad(MovePriority.SHOOT, ["LEFT"]);
+                } else {
+                  saveRoad(MovePriority.SHOOT, ["RIGHT"]);
+                }
+              }
+            }
+          });
       }
     } catch (e) {
       console.log(e);
@@ -165,7 +181,9 @@ export const startDodgeRoadSystem = async () => {
           if (!_dodge.isSafe && _dodge.result.length >= 1) {
             saveRoad(
               MovePriority.DODGE,
-              _dodge.result.slice(1).map((v) => v.orient)
+              _dodge.result
+                .filter((v) => v.orient !== null)
+                .map((v) => v.orient)
             );
           }
         }
@@ -185,9 +203,6 @@ export const stopIntervalFindTargetRoad = () => {
 
 export const findTargetSystem = async () => {
   setInterval(async () => {
-    if (targetTankUID === "") {
-      findTargetTank();
-    }
     try {
       if (
         myTank &&
@@ -196,6 +211,9 @@ export const findTargetSystem = async () => {
         road.priority > MovePriority.NORMAL &&
         road.data.length === 0
       ) {
+        if (targetTankUID === "") {
+          findTargetTank();
+        }
         const _road = findRoadToTarget(
           { x: myTank.x, y: myTank.y, orient: myTank.orient },
           0

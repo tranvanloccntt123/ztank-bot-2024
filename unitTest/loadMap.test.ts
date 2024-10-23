@@ -1,10 +1,7 @@
+import { time } from "console";
 import {
   bullets,
   dodgeBullets,
-  findRoadToPosition,
-  findRoadToTarget,
-  findTargetOnMap,
-  findTargetTank,
   myTank,
   saveBullets,
   saveMap,
@@ -17,24 +14,24 @@ saveMap(mapTest as any);
 
 saveTanks([
   {
-    x: 280,
-    y: 314,
+    x: 102,
+    y: 540,
     speed: 3,
     type: 1,
-    uid: "q00dtJ1HlyOhBjAVAAVn",
-    orient: "RIGHT",
-    isAlive: true,
+    uid: "I6ErD9e9_-U-X-bGAAvu",
+    orient: "UP",
+    isAlive: false,
     size: 33,
     name: "The Fool",
     shootable: true,
-    movable: false,
+    movable: true,
     shootCooldown: 0,
     invulnerable: false,
     protectCooldown: 0,
-    score: 0,
-    streak: 0,
-    bounty: 0,
-    color: 1,
+    score: 53,
+    streak: 5,
+    bounty: 12,
+    color: 0,
   },
   {
     x: 351,
@@ -60,14 +57,14 @@ saveTanks([
 
 saveBullets([
   {
-    x: 322.20588235292416,
-    y: 335.5,
+    x: 330,
+    y: 572.5,
     orient: "LEFT",
     speed: 4,
     type: 1,
     size: 8,
     uid: "TAKAd3flPK_tuIFMAALh",
-    id: 268910,
+    id: 404257,
     time: new Date().getTime(),
   },
 ] as any);
@@ -86,15 +83,3 @@ test("Dodge", () => {
   console.log(result);
   expect(result.result.length).toBe(1);
 });
-//{ x: 34, y: 4 }
-// test("Find road", () => {
-//   const result = findTargetOnMap();
-
-//   expect(result.length).toBeGreaterThanOrEqual(1);
-
-//   const road = findRoadToPosition({ x: 16, y: 25 });
-
-//   console.log(road);
-
-//   expect(road.length).toBeGreaterThanOrEqual(1);
-// });

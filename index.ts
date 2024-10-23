@@ -1,7 +1,7 @@
 import { TankTimeSpeed } from "./constants";
 import { joinMatch, moveTank, shoot } from "./connect";
 import {
-  bulletPositionAtPlustime,
+  bulletPositionAtPlusTime,
   checkBulletInsideTank,
   sleep,
   tankAtNextTime,
@@ -38,7 +38,7 @@ const init = async () => {
         if (myTank && road.priority !== MovePriority.DODGE) {
           const nextPosition = tankAtNextTime(myTank, orient);
           bullets.forEach((bullet) => {
-            const bulletPosition = bulletPositionAtPlustime(
+            const bulletPosition = bulletPositionAtPlusTime(
               bullet,
               TankTimeSpeed
             );

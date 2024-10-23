@@ -320,10 +320,11 @@ export const saveMap = (map: MapMatch) => {
 export const saveTanks = (_tanks: Array<Tank>) => {
   _tanks.forEach((tank) => {
     if (tank.x && tank.y) {
-      tanks.set(tank?.name, tank);
       if (tank.name === MY_NAME) {
         myTank = tank;
         saveIsShootAble(tank.shootable);
+      } else {
+        tanks.set(tank?.name, tank);
       }
     }
   });
@@ -672,25 +673,25 @@ export const dodgeBullets = (
   const queue: Array<Position & { ms: number }> = [{ ...tankPosition, ms: ms }];
   const result: Array<any> = [];
   while (queue.length) {
-    const tankPosition = queue.shift();
-    if (safeArea(tankPosition as never, bullets, tankPosition?.ms as never)) {
-      //REVERT POSTION
-      result.push(...revertRoad(dodgeRoad, tankPosition as any));
+    const _tankPosition = queue.shift();
+    if (safeArea(_tankPosition as never, bullets, _tankPosition?.ms as never)) {
+      //REVERT POSITION
+      result.push(...revertRoad(dodgeRoad, _tankPosition as any));
       break;
     }
     isSafe = false;
     for (let i = 0; i < orients.length; i++) {
       const orient = orients[i];
       const moveNextPosition = tankPositionAtNextTime(
-        tankPosition as never,
+        _tankPosition as never,
         orient as never
       );
       if (
         !checkTankPositionIsObject(moveNextPosition as never) &&
         !checkBulletsInsideTank(
-          tankPosition as never,
+          _tankPosition as never,
           bullets,
-          tankPosition!.ms
+          _tankPosition!.ms
         ) &&
         !(
           moveNextPosition!.x >= 848 ||
@@ -706,7 +707,7 @@ export const dodgeBullets = (
           dodgeRoad[moveNextPosition.y][moveNextPosition.x] = unOrients[i];
           queue.push({
             ...moveNextPosition,
-            ms: (tankPosition?.ms ?? 0) + TankTimeSpeed,
+            ms: (_tankPosition?.ms ?? 0) + TankTimeSpeed,
           });
         }
       }
