@@ -560,6 +560,76 @@ export const revertRoad = (
   return result;
 };
 
+export const findToBlockNearest = (
+  tankPosition: Position & { orient: Orient },
+  ms: number
+) => {
+  try {
+    const result: Array<any> = [];
+    let findRoad: any = {
+      [tankPosition.y]: {
+        [tankPosition.x]: "ROOT",
+      },
+    };
+
+    if (tankPosition && tankPosition.x && tankPosition.y) {
+      const queue: Array<Position & { ms: number }> = [
+        { ...tankPosition, ms: ms },
+      ];
+
+      let correct = false;
+
+      let countBlock = 0;
+
+      while (queue.length) {
+        const tankPosition = queue.shift();
+        if (tankPosition) {
+          if (correct) {
+            result.push(...revertRoad(findRoad, tankPosition as any));
+            break;
+          }
+        }
+        for (let i = 0; i < orients.length; i++) {
+          const orient = orients[i];
+          const moveNextPosition = tankPositionAtNextTime(
+            tankPosition as never,
+            orient as never
+          );
+          if (
+            !(
+              moveNextPosition!.x >= 848 ||
+              moveNextPosition!.x < 20 ||
+              moveNextPosition!.y >= 648 ||
+              moveNextPosition!.y < 20
+            )
+          ) {
+            if (checkTankPositionIsObject(moveNextPosition as never)) {
+              countBlock++;
+            } else if (!findRoad?.[moveNextPosition.y]?.[moveNextPosition.x]) {
+              if (!findRoad?.[moveNextPosition.y]) {
+                findRoad[moveNextPosition.y] = {};
+              }
+              findRoad[moveNextPosition.y][moveNextPosition.x] = unOrients[i];
+              queue.push({
+                ...moveNextPosition,
+                ms: (tankPosition?.ms ?? 0) + TankTimeSpeed,
+              });
+            }
+          }
+        }
+        if (countBlock >= 1) {
+          correct = true;
+        }
+        countBlock = 0;
+      }
+    }
+    return result;
+  } catch (e) {
+    console.log(e);
+    return [];
+  }
+};
+
 export const findRoadToTarget = (
   tankPosition: Position & { orient: Orient },
   ms: number
@@ -576,9 +646,9 @@ export const findRoadToTarget = (
     };
     const tank = tanks.get(targetTankUID);
 
-    if (tank && myTank) {
+    if (tank && tankPosition) {
       const targetDistance = findDistance.find(
-        (v) => v < euclideanDistance(myTank as never, tank as never)
+        (v) => v < euclideanDistance(tankPosition as never, tank as never)
       );
 
       const queue: Array<Position & { ms: number }> = [

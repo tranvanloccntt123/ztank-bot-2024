@@ -15,7 +15,9 @@ import {
   myTank,
   resolveMovePromise,
   resolveShootPromise,
+  resolveStartPromise,
   road,
+  startPromise,
 } from "./store";
 import * as _ from "lodash";
 import {
@@ -29,6 +31,10 @@ const init = async () => {
   resolveMovePromise(true);
   resolveShootPromise(true);
   joinMatch();
+  //TEST
+  resolveStartPromise(true);
+  //
+  await startPromise;
   while (true) {
     let canMoveNextPosition = false;
     try {

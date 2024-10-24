@@ -12,6 +12,7 @@ import {
   dodgeBullets,
   findRoadToTarget,
   findTargetTank,
+  findToBlockNearest,
   hasBlockBetweenObjects,
   hasBlockPosition,
   isReborn,
@@ -20,6 +21,7 @@ import {
   myTank,
   road,
   saveRoad,
+  startPromise,
   tanks,
   targetTankUID,
 } from "./store";
@@ -31,6 +33,7 @@ import {
 } from "./utils";
 
 export const startTrickShootSystem = async () => {
+  await startPromise;
   setInterval(() => {
     try {
       if (
@@ -137,7 +140,8 @@ export const stopIntervalCheckBullet = () => {
   clearInterval(countDownMove);
 };
 
-export const startIntervalToCheckBullet = () => {
+export const startIntervalToCheckBullet = async () => {
+  await startPromise;
   countDownMove = setInterval(() => {
     try {
       if (!mapMatch.length) {
@@ -197,6 +201,7 @@ export const stopIntervalDodge = () => {
 };
 
 export const startDodgeRoadSystem = async () => {
+  await startPromise;
   setInterval(() => {
     try {
       if (myTank && !isReborn.has(myTank.name)) {
@@ -230,6 +235,7 @@ export const stopIntervalFindTargetRoad = () => {
 };
 
 export const findTargetSystem = async () => {
+  await startPromise;
   setInterval(async () => {
     try {
       if (
@@ -239,20 +245,33 @@ export const findTargetSystem = async () => {
         road.priority > MovePriority.NORMAL &&
         road.data.length === 0
       ) {
-        if (targetTankUID === "" || Boolean(targetTankUID) === false) {
-          findTargetTank();
-        }
-        const _road = findRoadToTarget(
-          { x: myTank.x, y: myTank.y, orient: myTank.orient },
-          0
+        const ranking = Array.from(tanks.values()).sort(
+          (a, b) => b.score - a.score
         );
-        if (_road.length > 1) {
-          saveRoad(
-            MovePriority.NORMAL,
-            _road.slice(1).map((v) => v.orient)
+        if (
+          ranking[0].name === MY_NAME &&
+          ranking[0].score > ranking[1].score + 100
+        ) {
+          findToBlockNearest(
+            { x: myTank.x, y: myTank.y, orient: myTank.orient },
+            0
           );
         } else {
-          findTargetTank(targetTankUID);
+          if (targetTankUID === "" || Boolean(targetTankUID) === false) {
+            findTargetTank();
+          }
+          const _road = findRoadToTarget(
+            { x: myTank.x, y: myTank.y, orient: myTank.orient },
+            0
+          );
+          if (_road.length > 1) {
+            saveRoad(
+              MovePriority.NORMAL,
+              _road.slice(1).map((v) => v.orient)
+            );
+          } else {
+            findTargetTank(targetTankUID);
+          }
         }
       }
     } catch (e) {
