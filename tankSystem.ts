@@ -245,50 +245,50 @@ export const findTargetSystem = async () => {
         road.priority > MovePriority.NORMAL &&
         road.data.length === 0
       ) {
+        const ranking = Array.from(tanks.values()).sort(
+          (a, b) => b.score - a.score
+        );
+        if (
+          ranking[0].name === MY_NAME &&
+          ranking[0].score > ranking[1].score + 100
+        ) {
           const _road = findToBlockNearest(
             { x: myTank.x, y: myTank.y, orient: myTank.orient },
             0
           );
-           if (_road.length > 1) {
+          if (_road.length > 1) {
             saveRoad(
               MovePriority.NORMAL,
               _road.slice(1).map((v) => v.orient)
             );
           }
-        // const ranking = Array.from(tanks.values()).sort(
-        //   (a, b) => b.score - a.score
-        // );
-        // if (
-        //   ranking[0].name === MY_NAME &&
-        //   ranking[0].score > ranking[1].score + 100
-        // ) {
-        //   const _road = findToBlockNearest(
-        //     { x: myTank.x, y: myTank.y, orient: myTank.orient },
-        //     0
-        //   );
-        //    if (_road.length > 1) {
-        //     saveRoad(
-        //       MovePriority.NORMAL,
-        //       _road.slice(1).map((v) => v.orient)
-        //     );
-        //   }
-        // } else {
-        //   if (targetTankUID === "" || Boolean(targetTankUID) === false) {
-        //     findTargetTank();
-        //   }
-        //   const _road = findRoadToTarget(
-        //     { x: myTank.x, y: myTank.y, orient: myTank.orient },
-        //     0
-        //   );
-        //   if (_road.length > 1) {
-        //     saveRoad(
-        //       MovePriority.NORMAL,
-        //       _road.slice(1).map((v) => v.orient)
-        //     );
-        //   } else {
-        //     findTargetTank(targetTankUID);
-        //   }
-        // }
+        } else {
+          if (targetTankUID === "" || Boolean(targetTankUID) === false) {
+            findTargetTank();
+          }
+          const _road = findRoadToTarget(
+            { x: myTank.x, y: myTank.y, orient: myTank.orient },
+            0
+          );
+          if (_road.length > 1) {
+            saveRoad(
+              MovePriority.NORMAL,
+              _road.slice(1).map((v) => v.orient)
+            );
+          } else {
+            findTargetTank(targetTankUID);
+            const _roadToBlock = findToBlockNearest(
+              { x: myTank.x, y: myTank.y, orient: myTank.orient },
+              0
+            );
+            if (_roadToBlock.length > 1) {
+              saveRoad(
+                MovePriority.NORMAL,
+                _roadToBlock.slice(1).map((v) => v.orient)
+              );
+            }
+          }
+        }
       }
     } catch (e) {
       console.log(e);

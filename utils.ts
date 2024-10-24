@@ -350,7 +350,39 @@ export const isSameVerticalAxisWithSize = (
   return !(rightA < leftB || rightB < leftA);
 };
 
-export const checkTankPositionIsObject = (tankPosition: Position) => {
+export const checkFullTankNearestBlock = (tankPosition: Position) => {
+  //FULL UP
+  if (
+    hasBlockPosition({ x: tankPosition.x, y: tankPosition.y }) &&
+    hasBlockPosition({ x: tankPosition.x + TankSize, y: tankPosition.y })
+  ) {
+    return true;
+  }
+  //FULL LEFT
+  if (
+    hasBlockPosition({ x: tankPosition.x, y: tankPosition.y }) &&
+    hasBlockPosition({ x: tankPosition.x, y: tankPosition.y + TankSize })
+  ) {
+    return true;
+  }
+  //FULL RIGHT
+  if (
+    hasBlockPosition({ x: tankPosition.x + TankSize, y: tankPosition.y }) &&
+    hasBlockPosition({ x: tankPosition.x + TankSize, y: tankPosition.y + TankSize })
+  ) {
+    return true;
+  }
+  //FULL BOTTOM
+  if (
+    hasBlockPosition({ x: tankPosition.x, y: tankPosition.y + TankSize }) &&
+    hasBlockPosition({ x: tankPosition.x + TankSize, y: tankPosition.y + TankSize })
+  ) {
+    return true;
+  }
+  return false;
+};
+
+export const checkTankPositionIsBlock = (tankPosition: Position) => {
   return (
     hasBlockPosition({
       x: tankPosition.x,
@@ -371,7 +403,13 @@ export const checkTankPositionIsObject = (tankPosition: Position) => {
     hasBlockPosition({
       x: tankPosition.x + TankSize / 2,
       y: tankPosition.y + TankSize / 2,
-    }) ||
+    })
+  );
+};
+
+export const checkTankPositionIsObject = (tankPosition: Position) => {
+  return (
+    checkTankPositionIsBlock(tankPosition) ||
     hasObjectPosition({
       x: tankPosition.x,
       y: tankPosition.y,

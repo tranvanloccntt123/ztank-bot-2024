@@ -16,6 +16,7 @@ import {
   tankPositionAtNextTime,
   isSameHorizontalAxisWithSize,
   isSameVerticalAxisWithSize,
+  checkFullTankNearestBlock,
 } from "./utils";
 import * as _ from "lodash";
 
@@ -584,41 +585,50 @@ export const findToBlockNearest = (
       while (queue.length) {
         const tankPosition = queue.shift();
         if (tankPosition) {
-          if (correct) {
+          if (
+            correct &&
+            _.inRange(tankPosition.x, 100, 800) &&
+            _.inRange(tankPosition.y, 100, 600)
+          ) {
             result.push(...revertRoad(findRoad, tankPosition as any));
             break;
           }
-        }
-        for (let i = 0; i < orients.length; i++) {
-          const orient = orients[i];
-          const moveNextPosition = tankPositionAtNextTime(
-            tankPosition as never,
-            orient as never
-          );
-          if (
-            !(
-              moveNextPosition!.x >= 848 ||
-              moveNextPosition!.x < 20 ||
-              moveNextPosition!.y >= 648 ||
-              moveNextPosition!.y < 20
-            )
-          ) {
-            if (checkTankPositionIsObject(moveNextPosition as never)) {
-              countBlock++;
-            } else if (!findRoad?.[moveNextPosition.y]?.[moveNextPosition.x]) {
-              if (!findRoad?.[moveNextPosition.y]) {
-                findRoad[moveNextPosition.y] = {};
+          correct = false;
+          for (let i = 0; i < orients.length; i++) {
+            const orient = orients[i];
+            const moveNextPosition = tankPositionAtNextTime(
+              tankPosition as never,
+              orient as never
+            );
+            if (
+              !(
+                moveNextPosition!.x >= 848 ||
+                moveNextPosition!.x < 20 ||
+                moveNextPosition!.y >= 648 ||
+                moveNextPosition!.y < 20
+              )
+            ) {
+              if (checkTankPositionIsObject(moveNextPosition as never)) {
+                if (checkFullTankNearestBlock(moveNextPosition)) {
+                  countBlock++;
+                }
+              } else if (
+                !findRoad?.[moveNextPosition.y]?.[moveNextPosition.x]
+              ) {
+                if (!findRoad?.[moveNextPosition.y]) {
+                  findRoad[moveNextPosition.y] = {};
+                }
+                findRoad[moveNextPosition.y][moveNextPosition.x] = unOrients[i];
+                queue.push({
+                  ...moveNextPosition,
+                  ms: (tankPosition?.ms ?? 0) + TankTimeSpeed,
+                });
               }
-              findRoad[moveNextPosition.y][moveNextPosition.x] = unOrients[i];
-              queue.push({
-                ...moveNextPosition,
-                ms: (tankPosition?.ms ?? 0) + TankTimeSpeed,
-              });
             }
           }
-        }
-        if (countBlock >= 1) {
-          correct = true;
+          if (countBlock >= 1) {
+            correct = true;
+          }
         }
         countBlock = 0;
       }
@@ -657,7 +667,7 @@ export const findRoadToTarget = (
 
       while (queue.length) {
         const tankPosition = queue.shift();
-        if (tankPosition) {
+        if (tankPosition && tankPosition?.ms < 1200) {
           const isHorizontal = isSameHorizontalAxisWithSize(
             { x: tank.x, y: tank.y, size: TankSize },
             {
