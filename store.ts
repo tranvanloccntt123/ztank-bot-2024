@@ -17,6 +17,7 @@ import {
   isSameHorizontalAxisWithSize,
   isSameVerticalAxisWithSize,
   checkFullTankNearestBlock,
+  checkTankOverlap,
 } from "./utils";
 import * as _ from "lodash";
 
@@ -297,18 +298,6 @@ export const saveMap = (map: MapMatch) => {
               by + y * ObjectSize
             );
             addObjectPosition(position);
-            // if (by === 0) {
-            //   if (!objectPositionHorizontal[position.y]) {
-            //     objectPositionHorizontal[position.y] = [];
-            //   }
-            //   objectPositionHorizontal[position.y].push(position.x);
-            // }
-            // if (bx === 0) {
-            //   if (!objectPositionVertical[position.x]) {
-            //     objectPositionVertical[position.x] = [];
-            //   }
-            //   objectPositionVertical[position.x].push(position.y);
-            // }
           }
         }
       }
@@ -529,7 +518,7 @@ const orients = ["UP", "DOWN", "RIGHT", "LEFT"];
 const unOrients = ["DOWN", "UP", "LEFT", "RIGHT"];
 
 const findDistance = [
-  800, 750, 700, 650, 600, 550, 500, 450, 400, 320, 232, 200, 132, 96, 60,
+  800, 750, 700, 650, 600, 550, 500, 450, 400, 320, 232, 200, 132, 96,
 ];
 
 export const revertRoad = (
@@ -667,7 +656,7 @@ export const findRoadToTarget = (
 
       while (queue.length) {
         const tankPosition = queue.shift();
-        if (tankPosition && tankPosition?.ms < 1200) {
+        if (tankPosition && tankPosition?.ms < 3000) {
           const isHorizontal = isSameHorizontalAxisWithSize(
             { x: tank.x, y: tank.y, size: TankSize },
             {
@@ -686,7 +675,7 @@ export const findRoadToTarget = (
           );
           if (
             (isVertical || isHorizontal) &&
-            euclideanDistance(tankPosition, tank) <= (targetDistance ?? 60) &&
+            euclideanDistance(tankPosition, tank) <= (targetDistance ?? 96) &&
             euclideanDistance(tankPosition, tank) >= TankSize &&
             !hasBlockBetweenObjects(
               { x: tank.x, y: tank.y, size: TankSize },
@@ -768,6 +757,7 @@ export const dodgeBullets = (
       );
       if (
         !checkTankPositionIsObject(moveNextPosition as never) &&
+        !checkTankOverlap(moveNextPosition, tanks) &&
         !checkBulletsInsideTank(
           _tankPosition as never,
           bullets,

@@ -6,7 +6,6 @@ import {
   SERVER_1,
   SERVER_2,
   SERVER_3,
-  ShootAbleTime,
   TankTimeSpeed,
   Token,
 } from "./constants";
@@ -34,7 +33,6 @@ import {
   targetTankUID,
   saveTargetTankUID,
   saveLastMoveTime,
-  saveBanTankByName,
 } from "./store";
 
 import dotenv from "dotenv";
@@ -85,7 +83,6 @@ socket.on(
     );
     resolveStartPromise(true);
     resolveJoiningPromise(true);
-    saveIsJoinning(false);
     //run main it's here
   }
 );
@@ -116,9 +113,6 @@ socket.on(
   }) => {
     tanks.delete(data?.killed?.name);
     saveTanks([...data.tanks, data?.killer]);
-    if (data.bullet) {
-      bullets.delete(data.bullet?.id);
-    }
     isReboring(data?.killed?.name);
     setTimeout(() => {
       clearIsReboring(data?.killed?.name);
@@ -126,14 +120,13 @@ socket.on(
     if (data.killed?.name === MY_NAME) {
       clearRoad();
       saveTargetTankUID("");
-      saveBanTankByName("");
-      console.log("BULLET LOCAL", bullets.get(data.bullet.id));
-      console.log(data.bullet);
-      console.log(data.killed);
     }
     if (data.killed?.name === targetTankUID) {
       saveTargetTankUID("");
       clearRoad();
+    }
+    if (data.bullet) {
+      bullets.delete(data.bullet?.id);
     }
   }
 );
@@ -154,14 +147,12 @@ socket.on(Events.Shoot, (data: Bullet) => {
 
 socket.on(Events.UserDisconnect, (data: string) => {
   //
-  if (!isJoinning) {
-    if (!myTank) {
+  if (!myTank) {
+    joinMatch();
+  } else {
+    if (data === myTank?.uid) {
+      console.log("USER DISCONNECT");
       joinMatch();
-    } else {
-      if (data === myTank?.uid) {
-        console.log("USER DISCONNECT");
-        joinMatch();
-      }
     }
   }
 });

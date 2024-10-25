@@ -368,14 +368,20 @@ export const checkFullTankNearestBlock = (tankPosition: Position) => {
   //FULL RIGHT
   if (
     hasBlockPosition({ x: tankPosition.x + TankSize, y: tankPosition.y }) &&
-    hasBlockPosition({ x: tankPosition.x + TankSize, y: tankPosition.y + TankSize })
+    hasBlockPosition({
+      x: tankPosition.x + TankSize,
+      y: tankPosition.y + TankSize,
+    })
   ) {
     return true;
   }
   //FULL BOTTOM
   if (
     hasBlockPosition({ x: tankPosition.x, y: tankPosition.y + TankSize }) &&
-    hasBlockPosition({ x: tankPosition.x + TankSize, y: tankPosition.y + TankSize })
+    hasBlockPosition({
+      x: tankPosition.x + TankSize,
+      y: tankPosition.y + TankSize,
+    })
   ) {
     return true;
   }
@@ -437,28 +443,17 @@ export const checkBulletInsideTank = (
   tankPosition: Position,
   bullet: Position
 ) => {
-  if (
-    _.inRange(bullet.x, tankPosition.x - 1, tankPosition.x + TankSize + 2) &&
-    _.inRange(bullet.y, tankPosition.y - 1, tankPosition.y + TankSize + 2)
-  ) {
-    return true;
-  }
+  const Threshould = 4;
   if (
     _.inRange(
-      bullet.x + BulletSize,
-      tankPosition.x - 1,
-      tankPosition.x + TankSize + 2
+      bullet.x,
+      tankPosition.x - Threshould,
+      tankPosition.x + TankSize + 1 + Threshould
     ) &&
-    _.inRange(bullet.y, tankPosition.y - 1, tankPosition.y + TankSize + 2)
-  ) {
-    return true;
-  }
-  if (
-    _.inRange(bullet.x, tankPosition.x - 1, tankPosition.x + TankSize + 2) &&
     _.inRange(
-      bullet.y + BulletSize,
-      tankPosition.y - 1,
-      tankPosition.y + TankSize + 2
+      bullet.y,
+      tankPosition.y - Threshould,
+      tankPosition.y + TankSize + 1 + Threshould
     )
   ) {
     return true;
@@ -466,13 +461,41 @@ export const checkBulletInsideTank = (
   if (
     _.inRange(
       bullet.x + BulletSize,
-      tankPosition.x - 1,
-      tankPosition.x + TankSize + 2
+      tankPosition.x - Threshould,
+      tankPosition.x + TankSize + 1 + Threshould
+    ) &&
+    _.inRange(
+      bullet.y,
+      tankPosition.y - Threshould,
+      tankPosition.y + TankSize + 1 + Threshould
+    )
+  ) {
+    return true;
+  }
+  if (
+    _.inRange(
+      bullet.x,
+      tankPosition.x - Threshould,
+      tankPosition.x + TankSize + 1 + Threshould
     ) &&
     _.inRange(
       bullet.y + BulletSize,
-      tankPosition.y - 1,
-      tankPosition.y + TankSize + 2
+      tankPosition.y - Threshould,
+      tankPosition.y + TankSize + 1 + Threshould
+    )
+  ) {
+    return true;
+  }
+  if (
+    _.inRange(
+      bullet.x + BulletSize,
+      tankPosition.x - Threshould,
+      tankPosition.x + TankSize + 1 + Threshould
+    ) &&
+    _.inRange(
+      bullet.y + BulletSize,
+      tankPosition.y - Threshould,
+      tankPosition.y + TankSize + 1 + Threshould
     )
   ) {
     return true;
@@ -575,7 +598,7 @@ export const bulletInsideTankHorizontal = (
 export const checkBulletRunningToTank = (
   tankPosition: Position,
   bulletPosition: Position & { orient: Orient },
-  distance = TankSize * 7
+  distance = TankSize * 5
 ) => {
   if (
     bulletInsideTankVertical(tankPosition, bulletPosition) &&
