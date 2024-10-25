@@ -293,5 +293,5 @@ export const findTargetSystem = async () => {
     } catch (e) {
       console.log(e);
     }
-  }, TankTimeSpeed);
+  }, TankTimeSpeed * 2);
 };

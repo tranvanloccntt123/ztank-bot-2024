@@ -39,7 +39,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const socket = io(process?.env?.SOCKET_SERVER ?? SERVER_3, {
+const socket = io((process?.env?.SOCKET_SERVER ?? SERVER_3).replace('https', 'wss'), {
   auth: {
     token: Token,
   },
@@ -54,7 +54,6 @@ const socket = io(process?.env?.SOCKET_SERVER ?? SERVER_3, {
 export const joinMatch = () => {
   socket.emit(EmitEvent.Join);
   saveIsJoinning(true);
-  2;
 };
 
 export const shoot = () => {
