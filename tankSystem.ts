@@ -23,7 +23,7 @@ import {
   saveRoad,
   startPromise,
   tanks,
-  targetTankUID,
+  targetTankName,
 } from "./store";
 import {
   bulletPositionAtRunTime,
@@ -81,17 +81,17 @@ export const startTrickShootSystem = async () => {
               )
             ) {
               if (myTank?.orient === "UP" && tank.y < (myTank?.y ?? 0)) {
-                saveRoad(MovePriority.SHOOT, ["UP"]);
+                saveRoad(MovePriority.SHOOT, ["SHOOT"]);
               } else if (
                 myTank?.orient === "DOWN" &&
                 tank.y > (myTank?.y ?? 0)
               ) {
-                saveRoad(MovePriority.SHOOT, ["DOWN"]);
+                saveRoad(MovePriority.SHOOT, ["SHOOT"]);
               } else {
                 if (tank.y < (myTank?.y ?? 0)) {
-                  saveRoad(MovePriority.SHOOT, ["UP"]);
+                  saveRoad(MovePriority.SHOOT, ["UP", "SHOOT"]);
                 } else {
-                  saveRoad(MovePriority.SHOOT, ["DOWN"]);
+                  saveRoad(MovePriority.SHOOT, ["DOWN", "SHOOT"]);
                 }
               }
             }
@@ -112,17 +112,17 @@ export const startTrickShootSystem = async () => {
               )
             ) {
               if (myTank?.orient === "LEFT" && tank.x < (myTank?.x ?? 0)) {
-                saveRoad(MovePriority.SHOOT, ["LEFT"]);
+                saveRoad(MovePriority.SHOOT, ["SHOOT"]);
               } else if (
                 myTank?.orient === "RIGHT" &&
                 tank.x > (myTank?.x ?? 0)
               ) {
-                saveRoad(MovePriority.SHOOT, ["RIGHT"]);
+                saveRoad(MovePriority.SHOOT, ["SHOOT"]);
               } else {
                 if (tank.x < (myTank?.x ?? 0)) {
-                  saveRoad(MovePriority.SHOOT, ["LEFT"]);
+                  saveRoad(MovePriority.SHOOT, ["LEFT", "SHOOT"]);
                 } else {
-                  saveRoad(MovePriority.SHOOT, ["RIGHT"]);
+                  saveRoad(MovePriority.SHOOT, ["RIGHT", "SHOOT"]);
                 }
               }
             }
@@ -263,9 +263,6 @@ export const findTargetSystem = async () => {
             );
           }
         } else {
-          if (targetTankUID === "" || Boolean(targetTankUID) === false) {
-            findTargetTank();
-          }
           const _road = findRoadToTarget(
             { x: myTank.x, y: myTank.y, orient: myTank.orient },
             0
@@ -276,7 +273,7 @@ export const findTargetSystem = async () => {
               _road.slice(1).map((v) => v.orient)
             );
           } else {
-            findTargetTank(targetTankUID);
+            findTargetTank(targetTankName);
             const _roadToBlock = findToBlockNearest(
               { x: myTank.x, y: myTank.y, orient: myTank.orient },
               0

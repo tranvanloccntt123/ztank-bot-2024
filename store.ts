@@ -63,7 +63,7 @@ export let isMoveAble: boolean = true;
 
 export let isJoinning: boolean = false;
 
-export let targetTankUID: string = "";
+export let targetTankName: string = "";
 
 export let loadedMap = false;
 
@@ -85,7 +85,7 @@ export const MovePriority = {
 
 export let road: {
   priority: number;
-  data: Array<Orient>;
+  data: Array<Orient | "SHOOT">;
   index: number;
 } = {
   priority: 3,
@@ -158,16 +158,16 @@ export const findTargetTank = (_banName: string = "") => {
         return aPosition - bPosition;
       });
     if (_tanks.length) {
-      saveTargetTankUID(_tanks?.[0]?.name ?? "");
+      saveTargetTankName(_tanks?.[0]?.name ?? "");
     }
   }
 };
 
-export const saveTargetTankUID = (uid: string) => {
-  targetTankUID = uid;
+export const saveTargetTankName = (name: string) => {
+  targetTankName = name;
 };
 
-export const saveRoad = (priority: number, data: Array<Orient>) => {
+export const saveRoad = (priority: number, data: Array<Orient | "SHOOT">) => {
   try {
     if (data.length) {
       if (priority < road.priority) {
@@ -432,13 +432,13 @@ const movePostionDirection = [
 ];
 
 export const findTargetOnMap = () => {
-  if (targetTankUID === "") {
+  if (targetTankName === "") {
     findTargetTank();
   }
-  if (targetTankUID === "" || !myTank || !myTank.x || !myTank.y) {
+  if (targetTankName === "" || !myTank || !myTank.x || !myTank.y) {
     return [];
   }
-  const tank = tanks.get(targetTankUID);
+  const tank = tanks.get(targetTankName);
   if (!tank) {
     return [];
   }
@@ -629,68 +629,91 @@ export const findToBlockNearest = (
   }
 };
 
+export const checkTankInLine = (tankPosition: Position, tank: Tank) => {
+  const isHorizontal = isSameHorizontalAxisWithSize(
+    { x: tank.x, y: tank.y, size: TankSize },
+    {
+      x: tankPosition.x,
+      y: tankPosition.y,
+      size: TankSize,
+    }
+  );
+  const isVertical = isSameVerticalAxisWithSize(
+    { x: tank.x, y: tank.y, size: TankSize },
+    {
+      x: tankPosition.x,
+      y: tankPosition.y,
+      size: TankSize,
+    }
+  );
+  if (
+    (isVertical || isHorizontal) &&
+    euclideanDistance(tankPosition, tank) <= TankSize * 4 &&
+    euclideanDistance(tankPosition, tank) >= TankSize &&
+    !hasBlockBetweenObjects(
+      { x: tank.x, y: tank.y, size: TankSize },
+      {
+        x: tankPosition.x,
+        y: tankPosition.y,
+        size: TankSize,
+      },
+      isHorizontal ? true : false
+    )
+  ) {
+    return true;
+  }
+  return false;
+};
+
 export const findRoadToTarget = (
   tankPosition: Position & { orient: Orient },
   ms: number
 ) => {
   try {
-    if (targetTankUID === "") {
-      return [];
-    }
+    // if (targetTankUID === "") {
+    //   return [];
+    // }
     const result: Array<any> = [];
     let findRoad: any = {
       [tankPosition.y]: {
         [tankPosition.x]: "ROOT",
       },
     };
-    const tank = tanks.get(targetTankUID);
 
     const _bullets = Array.from(bullets.values());
 
-    if (tank && tankPosition) {
-      const targetDistance = findDistance.find(
-        (v) => v < euclideanDistance(tankPosition as never, tank as never)
-      );
-
+    if (tankPosition) {
       const queue: Array<Position & { ms: number }> = [
         { ...tankPosition, ms: ms },
       ];
 
+      const tank = tanks.get(targetTankName);
+
       while (queue.length) {
         const tankPosition = queue.shift();
         if (tankPosition && tankPosition?.ms < 4000) {
-          const isHorizontal = isSameHorizontalAxisWithSize(
-            { x: tank.x, y: tank.y, size: TankSize },
-            {
-              x: tankPosition.x,
-              y: tankPosition.y,
-              size: TankSize,
+          if (tank) {
+            if (checkTankInLine(tankPosition, tank)) {
+              result.push(...revertRoad(findRoad, tankPosition as any));
+              break;
             }
-          );
-          const isVertical = isSameVerticalAxisWithSize(
-            { x: tank.x, y: tank.y, size: TankSize },
-            {
-              x: tankPosition.x,
-              y: tankPosition.y,
-              size: TankSize,
+          } else {
+            let finded = false;
+            let tankName = "";
+            tanks.forEach((tank) => {
+              if (
+                tank.name !== MY_NAME &&
+                checkTankInLine(tankPosition, tank)
+              ) {
+                finded = true;
+                tankName = tank.name;
+              }
+            });
+            if (finded && tankName) {
+              saveTargetTankName(tankName);
+              result.push(...revertRoad(findRoad, tankPosition as any));
+              break;
             }
-          );
-          if (
-            (isVertical || isHorizontal) &&
-            euclideanDistance(tankPosition, tank) <= (targetDistance ?? 96) &&
-            euclideanDistance(tankPosition, tank) >= TankSize &&
-            !hasBlockBetweenObjects(
-              { x: tank.x, y: tank.y, size: TankSize },
-              {
-                x: tankPosition.x,
-                y: tankPosition.y,
-                size: TankSize,
-              },
-              isHorizontal ? true : false
-            )
-          ) {
-            result.push(...revertRoad(findRoad, tankPosition as any));
-            break;
           }
         }
         for (let i = 0; i < orients.length; i++) {

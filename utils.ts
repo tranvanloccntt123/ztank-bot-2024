@@ -90,7 +90,7 @@ export const moveVisible = (map: MapMatch, tank: Tank): Orient[] => {
 
 export const bulletPositionAtRunTime = (bullet: Bullet) => {
   const _runTime = new Date().getTime();
-  const minusTime = _runTime - bullet.time ?? 0;
+  const minusTime = _runTime - (bullet.time ?? 0);
   const change = (minusTime / BulletTimeSpeed) * BulletSpeed;
   switch (bullet.orient) {
     case "DOWN":
@@ -528,13 +528,13 @@ export const otherTankInsideVertical = (tank: Position) => {
   return (
     _.inRange(
       tank?.x ?? 0,
-      myTank.x + (TankSize / 2 - BulletSize / 2) - 2,
-      myTank.x + TankSize - (TankSize / 2 - BulletSize / 2) + 2
+      myTank.x + (TankSize / 2 - BulletSize / 2),
+      myTank.x + TankSize - (TankSize / 2 - BulletSize / 2)
     ) ||
     _.inRange(
       (tank?.x ?? 0) + TankSize,
-      myTank.x + (TankSize / 2 - BulletSize / 2) - 2,
-      myTank.x + TankSize - (TankSize / 2 - BulletSize / 2) + 2
+      myTank.x + (TankSize / 2 - BulletSize / 2),
+      myTank.x + TankSize - (TankSize / 2 - BulletSize / 2)
     ) ||
     _.inRange(
       myTank.x + (TankSize / 2 - BulletSize / 2),
@@ -556,13 +556,13 @@ export const otherTankInsideHorizontal = (tank: Position) => {
   return (
     _.inRange(
       tank?.y ?? 0,
-      myTank.y + (TankSize / 2 - BulletSize / 2) - 2,
-      myTank.y + TankSize - (TankSize / 2 - BulletSize / 2) + 2
+      myTank.y + (TankSize / 2 - BulletSize / 2),
+      myTank.y + TankSize - (TankSize / 2 - BulletSize / 2)
     ) ||
     _.inRange(
       (tank?.y ?? 0) + TankSize,
-      myTank.y + (TankSize / 2 - BulletSize / 2) - 2,
-      myTank.y + TankSize - (TankSize / 2 - BulletSize / 2) + 2
+      myTank.y + (TankSize / 2 - BulletSize / 2),
+      myTank.y + TankSize - (TankSize / 2 - BulletSize / 2)
     ) ||
     _.inRange(
       myTank.y + (TankSize / 2 - BulletSize / 2),

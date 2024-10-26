@@ -30,8 +30,8 @@ import {
   resetShootPromise,
   saveIsShootAble,
   resolveShootPromise,
-  targetTankUID,
-  saveTargetTankUID,
+  targetTankName,
+  saveTargetTankName,
   saveLastMoveTime,
 } from "./store";
 
@@ -39,17 +39,20 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const socket = io((process?.env?.SOCKET_SERVER ?? SERVER_3).replace('https', 'wss'), {
-  auth: {
-    token: Token,
-  },
-  transports: ["websocket"],
-  // reconnectionDelay: 500,
-  // reconnection: true,
-  // reconnectionDelayMax: 200,
-  upgrade: false,
-  autoConnect: true,
-});
+const socket = io(
+  (process?.env?.SOCKET_SERVER ?? SERVER_3).replace("https", "wss"),
+  {
+    auth: {
+      token: Token,
+    },
+    transports: ["websocket"],
+    // reconnectionDelay: 500,
+    // reconnection: true,
+    // reconnectionDelayMax: 200,
+    upgrade: false,
+    autoConnect: true,
+  }
+);
 
 export const joinMatch = () => {
   socket.emit(EmitEvent.Join);
@@ -118,10 +121,10 @@ socket.on(
     }, 2800);
     if (data.killed?.name === MY_NAME) {
       clearRoad();
-      saveTargetTankUID("");
+      saveTargetTankName("");
     }
-    if (data.killed?.name === targetTankUID) {
-      saveTargetTankUID("");
+    if (data.killed?.name === targetTankName) {
+      saveTargetTankName("");
       clearRoad();
     }
     if (data.bullet) {

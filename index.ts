@@ -1,4 +1,4 @@
-import { TankTimeSpeed } from "./constants";
+import { MY_NAME, TankSize, TankTimeSpeed } from "./constants";
 import { joinMatch, moveTank, shoot } from "./connect";
 import {
   bulletPositionAtPlusTime,
@@ -6,6 +6,9 @@ import {
   sleep,
   tankAtNextTime,
   checkBulletRunningToTank,
+  isSameVerticalAxisWithSize,
+  euclideanDistance,
+  isSameHorizontalAxisWithSize,
 } from "./utils";
 import {
   MovePriority,
@@ -18,6 +21,7 @@ import {
   resolveStartPromise,
   road,
   startPromise,
+  tanks,
 } from "./store";
 import * as _ from "lodash";
 import {
@@ -41,7 +45,11 @@ const init = async () => {
       if (road.index !== -1 && road.data.length && road.data[road.index]) {
         const orient = road.data[road.index];
         canMoveNextPosition = true;
-        if (myTank && road.priority !== MovePriority.DODGE) {
+        if (
+          myTank &&
+          road.priority !== MovePriority.DODGE &&
+          orient !== "SHOOT"
+        ) {
           const nextPosition = tankAtNextTime(myTank, orient);
           bullets.forEach((bullet) => {
             const bulletPosition = bulletPositionAtPlusTime(
@@ -68,18 +76,44 @@ const init = async () => {
               }
             }
           });
+          if (canMoveNextPosition) {
+            tanks.forEach((tank) => {
+              if (tank.name === MY_NAME || !tank.shootable) {
+                return;
+              }
+              if (
+                (isSameVerticalAxisWithSize(tank, {
+                  ...nextPosition,
+                  size: TankSize,
+                }) ||
+                  isSameHorizontalAxisWithSize(tank, {
+                    ...nextPosition,
+                    size: TankSize,
+                  })) &&
+                euclideanDistance(tank, { ...nextPosition }) <= TankSize * 2
+              ) {
+                canMoveNextPosition = false;
+              }
+            });
+          }
         }
-        if (canMoveNextPosition) {
-          moveTank(orient);
+        if (orient === "SHOOT") {
+          await sleep(1);
+          shoot();
           road.index = road.index + 1;
-          await movePromise;
-          if (road.index === road.data.length) {
-            if (road.priority === MovePriority.SHOOT) {
-              shoot();
-            }
-            clearRoad();
+        }
+
+        if (canMoveNextPosition) {
+          if (orient !== "SHOOT") {
+            moveTank(orient);
+            road.index = road.index + 1;
+            await movePromise;
           }
         } else {
+          clearRoad();
+        }
+
+        if (road.index === road.data.length) {
           clearRoad();
         }
       }
@@ -87,7 +121,7 @@ const init = async () => {
       console.log("MAIN", e);
     } finally {
       if (!canMoveNextPosition) {
-        await sleep(2);
+        await sleep(1);
       }
     }
   }
