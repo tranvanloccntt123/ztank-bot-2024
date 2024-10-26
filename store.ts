@@ -645,6 +645,8 @@ export const findRoadToTarget = (
     };
     const tank = tanks.get(targetTankUID);
 
+    const _bullets = Array.from(bullets.values());
+
     if (tank && tankPosition) {
       const targetDistance = findDistance.find(
         (v) => v < euclideanDistance(tankPosition as never, tank as never)
@@ -656,7 +658,7 @@ export const findRoadToTarget = (
 
       while (queue.length) {
         const tankPosition = queue.shift();
-        if (tankPosition && tankPosition?.ms < 3000) {
+        if (tankPosition && tankPosition?.ms < 4000) {
           const isHorizontal = isSameHorizontalAxisWithSize(
             { x: tank.x, y: tank.y, size: TankSize },
             {
@@ -699,6 +701,11 @@ export const findRoadToTarget = (
           );
           if (
             !checkTankPositionIsObject(moveNextPosition as never) &&
+            safeArea(
+              moveNextPosition,
+              _bullets,
+              (tankPosition?.ms ?? 0) + TankTimeSpeed
+            ) &&
             !(
               moveNextPosition!.x >= 848 ||
               moveNextPosition!.x < 20 ||
