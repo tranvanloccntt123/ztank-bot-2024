@@ -32,13 +32,13 @@ import {
 } from "./tankSystem";
 
 const init = async () => {
-  resolveMovePromise(true);
-  resolveShootPromise(true);
   joinMatch();
   //TEST
   resolveStartPromise(true);
   //
   await startPromise;
+  resolveMovePromise(true);
+  resolveShootPromise(true);
   while (true) {
     let canMoveNextPosition = false;
     try {

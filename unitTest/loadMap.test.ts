@@ -1,7 +1,10 @@
-import { time } from "console";
 import {
   bullets,
   dodgeBullets,
+  findRoadOnListMapIndex,
+  findRoadToReady,
+  findTargetOnMap,
+  findTargetTank,
   myTank,
   saveBullets,
   saveMap,
@@ -14,50 +17,50 @@ saveMap(mapTest as any);
 
 saveTanks([
   {
-    x: 102,
-    y: 540,
+    x: 522,
+    y: 600,
     speed: 3,
     type: 1,
-    uid: "I6ErD9e9_-U-X-bGAAvu",
+    uid: "9WTn1GyRD_D3NWm9AB8F",
     orient: "UP",
-    isAlive: false,
+    isAlive: true,
     size: 33,
     name: "The Fool",
-    shootable: true,
+    shootable: false,
     movable: true,
-    shootCooldown: 0,
+    shootCooldown: 52,
     invulnerable: false,
     protectCooldown: 0,
-    score: 53,
-    streak: 5,
-    bounty: 12,
+    score: 172,
+    streak: 16,
+    bounty: 45,
     color: 0,
   },
   {
-    x: 351,
-    y: 58,
+    x: 376,
+    y: 580,
     speed: 3,
     type: 1,
-    uid: "TAKAd3flPK_tuIFMAALh",
+    uid: "gOvOWWx18Csd0vc2ABAw",
     orient: "RIGHT",
     isAlive: true,
     size: 33,
     name: "zarenabot",
     shootable: false,
-    movable: false,
-    shootCooldown: 37,
+    movable: true,
+    shootCooldown: 39,
     invulnerable: false,
     protectCooldown: 0,
-    score: 903,
+    score: 45227,
     streak: 1,
     bounty: 0,
-    color: 1,
+    color: 3,
   },
 ]);
 
 saveBullets([
   {
-    x: 330,
+    x: 600,
     y: 572.5,
     orient: "LEFT",
     speed: 4,
@@ -80,6 +83,17 @@ test("Dodge", () => {
     Array.from(bullets.values()),
     0
   );
-  console.log(result);
   expect(result.result.length).toBe(1);
+});
+
+test("New find road", () => {
+  findTargetTank();
+  const readyLine = findRoadToReady(myTank!, 0);
+  const onMapPositions = findTargetOnMap();
+  // console.log(onMapPositions);
+  expect(onMapPositions.length).toBeGreaterThanOrEqual(1);
+  if (onMapPositions.length) {
+    const road = findRoadOnListMapIndex(myTank!, onMapPositions, 0);
+    expect(road.length).toBeGreaterThan(1);
+  }
 });

@@ -270,24 +270,38 @@ export const findTargetSystem = async () => {
           if (targetTankName === "" || Boolean(targetTankName) === false) {
             findTargetTank();
           }
-          const onMapPositions = findTargetOnMap();
-          const _road = findRoadOnListMapIndex(myTank!, onMapPositions, 0);
-          if (_road.length > 1) {
+          const readyLine = findRoadToReady(myTank!, 0);
+          if (readyLine.length > 1) {
             saveRoad(
               MovePriority.NORMAL,
-              _road.slice(1).map((v) => v.orient)
+              readyLine.slice(1).map((v) => v.orient)
             );
           } else {
-            findTargetTank(targetTankName);
-            const _roadToBlock = findToBlockNearest(
-              { x: myTank.x, y: myTank.y, orient: myTank.orient },
+            const onMapPositions = findTargetOnMap();
+            const _road = findRoadOnListMapIndex(
+              myTank!,
+              onMapPositions.length >= 4
+                ? onMapPositions.slice(0, 3)
+                : onMapPositions,
               0
             );
-            if (_roadToBlock.length > 1) {
+            if (_road.length >= 1) {
               saveRoad(
                 MovePriority.NORMAL,
-                _roadToBlock.slice(1).map((v) => v.orient)
+                _road.slice(1).map((v) => v.orient)
               );
+            } else {
+              findTargetTank(targetTankName);
+              const _roadToBlock = findToBlockNearest(
+                { x: myTank.x, y: myTank.y, orient: myTank.orient },
+                0
+              );
+              if (_roadToBlock.length > 1) {
+                saveRoad(
+                  MovePriority.NORMAL,
+                  _roadToBlock.slice(1).map((v) => v.orient)
+                );
+              }
             }
           }
         }

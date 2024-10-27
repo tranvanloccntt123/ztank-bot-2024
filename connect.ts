@@ -75,6 +75,10 @@ export const moveTank = (orient: Orient) => {
   socket.emit(EmitEvent.Move, { orient });
 };
 
+socket.on(Events.Start, () => {
+  // resolveStartPromise(true);
+});
+
 socket.on(
   Events.User,
   (data: { map: MapMatch; tanks: Array<Tank>; bullets: Array<Bullet> }) => {
@@ -83,9 +87,7 @@ socket.on(
     saveBullets(
       data.bullets.map((bullet) => ({ ...bullet, time: new Date().getTime() }))
     );
-    resolveStartPromise(true);
     resolveJoiningPromise(true);
-    //run main it's here
   }
 );
 
@@ -95,7 +97,7 @@ socket.on(Events.UserJoining, (data: { tank: Tank; tanks: Array<Tank> }) => {
 });
 
 socket.on(Events.Reborn, (data: Tank) => {
-  // saveTanks([data]);
+  saveTanks([data]);
 });
 
 socket.on(Events.Move, (data: Tank) => {

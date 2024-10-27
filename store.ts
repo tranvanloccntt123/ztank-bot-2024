@@ -18,6 +18,7 @@ import {
   isSameVerticalAxisWithSize,
   checkFullTankNearestBlock,
   checkTankOverlap,
+  mapIndexOnMapMatch,
 } from "./utils";
 import * as _ from "lodash";
 
@@ -214,11 +215,31 @@ export const hasBlockBetweenObjects = (
   smallSize: Position & { size: number },
   isHorizontal: boolean = false
 ): boolean => {
-  const minX = Math.min(Math.round(largeSize.x), Math.round(smallSize.x));
-  const maxX = Math.max(Math.round(largeSize.x), Math.round(smallSize.x));
+  const minX = Math.min(
+    Math.round(largeSize.x),
+    Math.round(smallSize.x),
+    Math.round(largeSize.x + largeSize.size),
+    Math.round(smallSize.x + smallSize.size)
+  );
+  const maxX = Math.max(
+    Math.round(largeSize.x),
+    Math.round(smallSize.x),
+    Math.round(largeSize.x + largeSize.size),
+    Math.round(smallSize.x + smallSize.size)
+  );
 
-  const minY = Math.min(Math.round(largeSize.y), Math.round(smallSize.y));
-  const maxY = Math.max(Math.round(largeSize.y), Math.round(smallSize.y));
+  const minY = Math.min(
+    Math.round(largeSize.y),
+    Math.round(smallSize.y),
+    Math.round(largeSize.y + largeSize.size),
+    Math.round(smallSize.y + smallSize.size)
+  );
+  const maxY = Math.max(
+    Math.round(largeSize.y),
+    Math.round(smallSize.y),
+    Math.round(largeSize.y + largeSize.size),
+    Math.round(smallSize.y + smallSize.size)
+  );
   if (isHorizontal) {
     for (let i = minY; i <= maxY; i++) {
       if (
@@ -432,9 +453,6 @@ const movePostionDirection = [
 ];
 
 export const findTargetOnMap = () => {
-  if (targetTankName === "") {
-    findTargetTank();
-  }
   if (targetTankName === "" || !myTank || !myTank.x || !myTank.y) {
     return [];
   }
@@ -443,12 +461,12 @@ export const findTargetOnMap = () => {
     return [];
   }
   const myTankIndex = initPosition(
-    Math.round((myTank.x + TankSize / 2) / ObjectSize),
-    Math.round((myTank.y + TankSize / 2) / ObjectSize)
+    Math.floor(myTank.x / ObjectSize),
+    Math.floor(myTank.y / ObjectSize)
   );
   const targetTankIndex = initPosition(
-    Math.round((tank.x + TankSize / 2) / ObjectSize),
-    Math.round((tank.y + TankSize / 2) / ObjectSize)
+    Math.floor(tank.x / ObjectSize),
+    Math.floor(tank.y / ObjectSize)
   );
   const result: Array<Position> = [];
   const checked: any = {
@@ -463,16 +481,61 @@ export const findTargetOnMap = () => {
     },
   ];
   while (queue.length) {
-    const tankPosition = queue.shift();
-    if (!tankPosition) {
+    const currentPosition = queue.shift();
+    if (!currentPosition) {
       continue;
     }
     if (
-      tankPosition.x === targetTankIndex.x &&
-      tankPosition.y === targetTankIndex.y
+      ((_.inRange(
+        targetTankIndex.x,
+        currentPosition.x,
+        currentPosition.x + 2
+      ) ||
+        _.inRange(
+          targetTankIndex.x + 1,
+          currentPosition.x,
+          currentPosition.x + 2
+        )) &&
+        !hasBlockBetweenObjects(
+          {
+            x: currentPosition.x * ObjectSize,
+            y: currentPosition.y * ObjectSize,
+            size: TankSize,
+          },
+          {
+            x: targetTankIndex.x * ObjectSize,
+            y: targetTankIndex.y * ObjectSize,
+            size: TankSize,
+          },
+          false
+        )) ||
+      ((_.inRange(
+        targetTankIndex.y,
+        currentPosition.y,
+        currentPosition.y + 2
+      ) ||
+        _.inRange(
+          targetTankIndex.y + 1,
+          currentPosition.y,
+          currentPosition.y + 2
+        )) &&
+        !hasBlockBetweenObjects(
+          {
+            x: currentPosition.x * ObjectSize,
+            y: currentPosition.y * ObjectSize,
+            size: TankSize,
+          },
+          {
+            x: targetTankIndex.x * ObjectSize,
+            y: targetTankIndex.y * ObjectSize,
+            size: TankSize,
+          }
+        ))
     ) {
       //finded
-      let position = checked[tankPosition?.y ?? ""][tankPosition?.x ?? ""];
+      result.unshift(currentPosition as never);
+      let position =
+        checked[currentPosition?.y ?? ""][currentPosition?.x ?? ""];
       while (
         position !== null &&
         (position?.x !== myTankIndex.x || position?.y !== myTankIndex.y)
@@ -484,8 +547,8 @@ export const findTargetOnMap = () => {
     }
     for (let dir of movePostionDirection) {
       const moveNextPosition = initPosition(
-        tankPosition.x + dir.x,
-        tankPosition.y + dir.y
+        currentPosition.x + dir.x,
+        currentPosition.y + dir.y
       );
       if (
         moveNextPosition.x < 1 ||
@@ -494,6 +557,15 @@ export const findTargetOnMap = () => {
         moveNextPosition.y > 33 ||
         ["B", "T", "W"].includes(
           mapMatch[moveNextPosition.y][moveNextPosition.x] as never
+        ) ||
+        ["B", "T", "W"].includes(
+          mapMatch[moveNextPosition.y][moveNextPosition.x + 1] as never
+        ) ||
+        ["B", "T", "W"].includes(
+          mapMatch[moveNextPosition.y + 1][moveNextPosition.x] as never
+        ) ||
+        ["B", "T", "W"].includes(
+          mapMatch[moveNextPosition.y + 1][moveNextPosition.x + 1] as never
         )
       ) {
         continue;
@@ -503,8 +575,8 @@ export const findTargetOnMap = () => {
           checked[moveNextPosition.y] = {};
         }
         checked[moveNextPosition.y][moveNextPosition.x] = {
-          x: tankPosition.x,
-          y: tankPosition.y,
+          x: currentPosition.x,
+          y: currentPosition.y,
         };
         queue.push(moveNextPosition);
       }
@@ -629,7 +701,11 @@ export const findToBlockNearest = (
   }
 };
 
-export const checkTankInLine = (tankPosition: Position, tank: Tank) => {
+export const checkTankInLine = (
+  tankPosition: Position,
+  tank: Tank,
+  distance: number
+) => {
   const isHorizontal = isSameHorizontalAxisWithSize(
     { x: tank.x, y: tank.y, size: TankSize },
     {
@@ -648,7 +724,7 @@ export const checkTankInLine = (tankPosition: Position, tank: Tank) => {
   );
   if (
     (isVertical || isHorizontal) &&
-    euclideanDistance(tankPosition, tank) <= TankSize * 4 &&
+    euclideanDistance(tankPosition, tank) <= (distance ?? TankSize * 4) &&
     euclideanDistance(tankPosition, tank) >= TankSize &&
     !hasBlockBetweenObjects(
       { x: tank.x, y: tank.y, size: TankSize },
@@ -665,14 +741,28 @@ export const checkTankInLine = (tankPosition: Position, tank: Tank) => {
   return false;
 };
 
-export const findRoadToTarget = (
-  tankPosition: Position & { orient: Orient },
+export const checkReadyPosition = (mapIndex: MapIndex) => {
+  if (
+    mapIndex.startX % 2 === 0 &&
+    mapIndex.startY % 2 === 0 &&
+    mapIndex.endX % 2 !== 0 &&
+    mapIndex.endY % 2 !== 0
+  ) {
+    return true;
+  }
+  return false;
+};
+
+export const findRoadOnListMapIndex = (
+  tankPosition: Position,
+  positions: Array<Position>,
   ms: number
 ) => {
   try {
-    // if (targetTankUID === "") {
-    //   return [];
-    // }
+    if (!positions.length) {
+      return [];
+    }
+
     const result: Array<any> = [];
     let findRoad: any = {
       [tankPosition.y]: {
@@ -680,37 +770,166 @@ export const findRoadToTarget = (
       },
     };
 
-    const _bullets = Array.from(bullets.values());
+    if (tankPosition) {
+      let queue: Array<Position & { ms: number }> = [
+        { ...tankPosition, ms: ms },
+      ];
+
+      let listIndex = 0;
+
+      while (queue.length) {
+        const tankPosition = queue.shift();
+        if (tankPosition) {
+          const mapIdex = mapIndexOnMapMatch(tankPosition);
+          if (
+            positions[listIndex].x === mapIdex.startX &&
+            positions[listIndex].y === mapIdex.startY &&
+            tankPosition.x / positions[listIndex].x > ObjectSize &&
+            tankPosition.y / positions[listIndex].y > ObjectSize
+          ) {
+            listIndex++;
+            queue = [];
+          }
+          if (listIndex === positions.length) {
+            result.push(...revertRoad(findRoad, tankPosition as any));
+            break;
+          }
+        }
+        for (let i = 0; i < orients.length; i++) {
+          const orient = orients[i];
+          const moveNextPosition = tankPositionAtNextTime(
+            tankPosition as never,
+            orient as never
+          );
+          if (
+            !checkTankPositionIsObject(moveNextPosition as never) &&
+            !(
+              moveNextPosition!.x >= 848 ||
+              moveNextPosition!.x < 20 ||
+              moveNextPosition!.y >= 648 ||
+              moveNextPosition!.y < 20
+            )
+          ) {
+            if (!findRoad?.[moveNextPosition.y]?.[moveNextPosition.x]) {
+              if (!findRoad?.[moveNextPosition.y]) {
+                findRoad[moveNextPosition.y] = {};
+              }
+              findRoad[moveNextPosition.y][moveNextPosition.x] = unOrients[i];
+              queue.push({
+                ...moveNextPosition,
+                ms: (tankPosition?.ms ?? 0) + TankTimeSpeed,
+              });
+            }
+          }
+        }
+      }
+    }
+    return result;
+  } catch (e) {
+    console.log(e);
+    return [];
+  }
+};
+
+export const findRoadToReady = (
+  tankPosition: Position & { orient: Orient },
+  ms: number
+) => {
+  try {
+    const result: Array<any> = [];
+    let findRoad: any = {
+      [tankPosition.y]: {
+        [tankPosition.x]: "ROOT",
+      },
+    };
 
     if (tankPosition) {
       const queue: Array<Position & { ms: number }> = [
         { ...tankPosition, ms: ms },
       ];
 
-      const tank = tanks.get(targetTankName);
+      while (queue.length) {
+        const tankPosition = queue.shift();
+        if (tankPosition && tankPosition?.ms < 2000) {
+          const mapIdex = mapIndexOnMapMatch(tankPosition);
+          if (checkReadyPosition(mapIdex)) {
+            result.push(...revertRoad(findRoad, tankPosition as any));
+            break;
+          }
+        }
+        for (let i = 0; i < orients.length; i++) {
+          const orient = orients[i];
+          const moveNextPosition = tankPositionAtNextTime(
+            tankPosition as never,
+            orient as never
+          );
+          if (
+            !checkTankPositionIsObject(moveNextPosition as never) &&
+            !(
+              moveNextPosition!.x >= 848 ||
+              moveNextPosition!.x < 20 ||
+              moveNextPosition!.y >= 648 ||
+              moveNextPosition!.y < 20
+            )
+          ) {
+            if (!findRoad?.[moveNextPosition.y]?.[moveNextPosition.x]) {
+              if (!findRoad?.[moveNextPosition.y]) {
+                findRoad[moveNextPosition.y] = {};
+              }
+              findRoad[moveNextPosition.y][moveNextPosition.x] = unOrients[i];
+              queue.push({
+                ...moveNextPosition,
+                ms: (tankPosition?.ms ?? 0) + TankTimeSpeed,
+              });
+            }
+          }
+        }
+      }
+    }
+    return result;
+  } catch (e) {
+    console.log(e);
+    return [];
+  }
+};
+
+export const findRoadToTarget = (
+  tankPosition: Position & { orient: Orient },
+  ms: number
+) => {
+  try {
+    if (targetTankName === "") {
+      return [];
+    }
+    const result: Array<any> = [];
+    let findRoad: any = {
+      [tankPosition.y]: {
+        [tankPosition.x]: "ROOT",
+      },
+    };
+
+    const tank = tanks.get(targetTankName);
+
+    if (tankPosition && tank) {
+      const queue: Array<Position & { ms: number }> = [
+        { ...tankPosition, ms: ms },
+      ];
+
+      const targetDistance = findDistance.find(
+        (v) => v < euclideanDistance(tankPosition as never, tank as never)
+      );
 
       while (queue.length) {
         const tankPosition = queue.shift();
-        if (tankPosition && tankPosition?.ms < 4000) {
+        if (tankPosition && tankPosition?.ms < 2000) {
           if (tank) {
-            if (checkTankInLine(tankPosition, tank)) {
-              result.push(...revertRoad(findRoad, tankPosition as any));
-              break;
-            }
-          } else {
-            let finded = false;
-            let tankName = "";
-            tanks.forEach((tank) => {
-              if (
-                tank.name !== MY_NAME &&
-                checkTankInLine(tankPosition, tank)
-              ) {
-                finded = true;
-                tankName = tank.name;
-              }
-            });
-            if (finded && tankName) {
-              saveTargetTankName(tankName);
+            if (
+              checkTankInLine(
+                tankPosition,
+                tank,
+                targetDistance ?? TankSize * 4
+              )
+            ) {
               result.push(...revertRoad(findRoad, tankPosition as any));
               break;
             }
@@ -724,11 +943,6 @@ export const findRoadToTarget = (
           );
           if (
             !checkTankPositionIsObject(moveNextPosition as never) &&
-            safeArea(
-              moveNextPosition,
-              _bullets,
-              (tankPosition?.ms ?? 0) + TankTimeSpeed
-            ) &&
             !(
               moveNextPosition!.x >= 848 ||
               moveNextPosition!.x < 20 ||

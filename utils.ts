@@ -56,10 +56,14 @@ export const mapIndexOnMapMatch = (
     (position?.x ?? 0) / ObjectSize,
     (position?.y ?? 0) / ObjectSize
   );
-  const startX = Math.round(mapIndex.x);
-  const startY = Math.round(mapIndex.y);
-  const endX = Math.round(mapIndex.x + (size ?? TankOnObjectPercent));
-  const endY = Math.round(mapIndex.y + (size ?? TankOnObjectPercent));
+  const startX = parseInt(mapIndex.x.toString());
+  const startY = parseInt(mapIndex.y.toString());
+  const endX = parseInt(
+    (mapIndex.x + (size ?? TankOnObjectPercent)).toString()
+  );
+  const endY = parseInt(
+    (mapIndex.y + (size ?? TankOnObjectPercent)).toString()
+  );
   return {
     startX,
     startY,
