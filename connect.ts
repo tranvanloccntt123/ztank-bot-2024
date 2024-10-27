@@ -76,7 +76,7 @@ export const moveTank = (orient: Orient) => {
 };
 
 socket.on(Events.Start, () => {
-  // resolveStartPromise(true);
+  resolveStartPromise(true);
 });
 
 socket.on(

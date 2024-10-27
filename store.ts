@@ -486,16 +486,7 @@ export const findTargetOnMap = () => {
       continue;
     }
     if (
-      ((_.inRange(
-        targetTankIndex.x,
-        currentPosition.x,
-        currentPosition.x + 2
-      ) ||
-        _.inRange(
-          targetTankIndex.x + 1,
-          currentPosition.x,
-          currentPosition.x + 2
-        )) &&
+      ((targetTankIndex.x === currentPosition.x &&
         !hasBlockBetweenObjects(
           {
             x: currentPosition.x * ObjectSize,
@@ -509,28 +500,20 @@ export const findTargetOnMap = () => {
           },
           false
         )) ||
-      ((_.inRange(
-        targetTankIndex.y,
-        currentPosition.y,
-        currentPosition.y + 2
-      ) ||
-        _.inRange(
-          targetTankIndex.y + 1,
-          currentPosition.y,
-          currentPosition.y + 2
-        )) &&
-        !hasBlockBetweenObjects(
-          {
-            x: currentPosition.x * ObjectSize,
-            y: currentPosition.y * ObjectSize,
-            size: TankSize,
-          },
-          {
-            x: targetTankIndex.x * ObjectSize,
-            y: targetTankIndex.y * ObjectSize,
-            size: TankSize,
-          }
-        ))
+        (targetTankIndex.y === currentPosition.y &&
+          !hasBlockBetweenObjects(
+            {
+              x: currentPosition.x * ObjectSize,
+              y: currentPosition.y * ObjectSize,
+              size: TankSize,
+            },
+            {
+              x: targetTankIndex.x * ObjectSize,
+              y: targetTankIndex.y * ObjectSize,
+              size: TankSize,
+            }
+          ))) &&
+      euclideanDistance(currentPosition, targetTankIndex) >= 3
     ) {
       //finded
       result.unshift(currentPosition as never);

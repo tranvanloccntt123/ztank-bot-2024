@@ -1,0 +1,8 @@
+I. ENV FILE: .env
+    File include SOCKET_SERVER
+    Example:
+    SOCKET_SERVER=https://zarena-dev2.zinza.com.vn
+
+II. SOURCE
+    - main: index.ts
+    Project's using BunJS to build and run.
