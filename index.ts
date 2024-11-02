@@ -18,6 +18,7 @@ import {
   myTank,
   resolveMovePromise,
   resolveShootPromise,
+  resolveStartPromise,
   road,
   startPromise,
   tanks,
@@ -32,6 +33,8 @@ import {
 
 const init = async () => {
   joinMatch();
+  //TEST
+  resolveStartPromise(true);
   await startPromise;
   resolveMovePromise(true);
   resolveShootPromise(true);

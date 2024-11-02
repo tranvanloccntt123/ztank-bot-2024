@@ -249,46 +249,30 @@ export const findTargetSystem = async () => {
         road.priority > MovePriority.NORMAL &&
         road.data.length === 0
       ) {
-        const ranking = Array.from(tanks.values()).sort(
-          (a, b) => b.score - a.score
-        );
-        if (
-          ranking[0].name === MY_NAME &&
-          ranking[0].score > ranking[1].score + 100
-        ) {
-          const _road = findToBlockNearest(
+        if (targetTankName === "" || Boolean(targetTankName) === false) {
+          findTargetTank();
+        }
+        const onMapPositions = findTargetOnMap();
+        const _road = findRoadOnListMapIndex(myTank!, onMapPositions, 0);
+        if (_road.length >= 1) {
+          saveRoad(
+            MovePriority.NORMAL,
+            _road.map((v) => v.orient)
+          );
+        } else {
+          if (targetTankName) {
+            console.log(myTank, tanks.get(targetTankName));
+          }
+          findTargetTank(targetTankName);
+          const _roadToBlock = findToBlockNearest(
             { x: myTank.x, y: myTank.y, orient: myTank.orient },
             0
           );
-          if (_road.length > 1) {
+          if (_roadToBlock.length > 1) {
             saveRoad(
               MovePriority.NORMAL,
-              _road.slice(1).map((v) => v.orient)
+              _roadToBlock.slice(1).map((v) => v.orient)
             );
-          }
-        } else {
-          if (targetTankName === "" || Boolean(targetTankName) === false) {
-            findTargetTank();
-          }
-          const onMapPositions = findTargetOnMap();
-          const _road = findRoadOnListMapIndex(myTank!, onMapPositions, 0);
-          if (_road.length > 1) {
-            saveRoad(
-              MovePriority.NORMAL,
-              _road.slice(1).map((v) => v.orient)
-            );
-          } else {
-            findTargetTank(targetTankName);
-            const _roadToBlock = findToBlockNearest(
-              { x: myTank.x, y: myTank.y, orient: myTank.orient },
-              0
-            );
-            if (_roadToBlock.length > 1) {
-              saveRoad(
-                MovePriority.NORMAL,
-                _roadToBlock.slice(1).map((v) => v.orient)
-              );
-            }
           }
         }
       }

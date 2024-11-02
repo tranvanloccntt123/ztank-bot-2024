@@ -3,6 +3,7 @@ import {
   MY_NAME,
   MapSize,
   ObjectSize,
+  TankOnObjectPercent,
   TankSize,
   TankTimeSpeed,
 } from "./constants";
@@ -567,9 +568,9 @@ export const findTargetOnMap = () => {
   return result;
 };
 
-const orients = ["UP", "DOWN", "RIGHT", "LEFT"];
+const orients: Array<Orient> = ["UP", "DOWN", "RIGHT", "LEFT"];
 
-const unOrients = ["DOWN", "UP", "LEFT", "RIGHT"];
+const unOrients: Array<Orient> = ["DOWN", "UP", "LEFT", "RIGHT"];
 
 const findDistance = [
   800, 750, 700, 650, 600, 550, 500, 450, 400, 320, 232, 200, 132, 96,
@@ -589,7 +590,7 @@ export const revertRoad = (
     ...prevPosition,
     orient: orients[findOrientIndex] ?? "null",
   } as never);
-  while (unOrient !== "ROOT") {
+  while (unOrient !== "ROOT" && unOrient !== undefined) {
     unOrient = roads[prevPosition?.y ?? ""][prevPosition?.x ?? ""];
     if (unOrient === "ROOT") {
       break;
@@ -746,6 +747,9 @@ export const findRoadOnListMapIndex = (
     }
 
     const result: Array<any> = [];
+
+    let findedTankPosition = null;
+
     let findRoad: any = {
       [tankPosition.y]: {
         [tankPosition.x]: "ROOT",
@@ -759,52 +763,98 @@ export const findRoadOnListMapIndex = (
 
       let listIndex = 0;
 
+      const initMapIndex = mapIndexOnMapMatch(tankPosition);
+
+      // console.log("CURRENT MAP INDEX", initMapIndex);
+
+      const threadhold = 0.2;
+
       while (queue.length) {
         const tankPosition = queue.shift();
         if (tankPosition) {
-          const mapIdex = mapIndexOnMapMatch(tankPosition);
+          const mapIndex = mapIndexOnMapMatch(tankPosition);
+          // if (mapIndex.startX === 30 && mapIndex.startY === 9)
+          //   console.log(mapIndex, tankPosition);
           if (
-            positions[listIndex].x === mapIdex.startX &&
-            positions[listIndex].y === mapIdex.startY &&
-            tankPosition.x / positions[listIndex].x > ObjectSize &&
-            tankPosition.y / positions[listIndex].y > ObjectSize
+            positions[listIndex].x === mapIndex.startX &&
+            positions[listIndex].y === mapIndex.startY &&
+            tankPosition.x / ObjectSize >= positions[listIndex].x &&
+            tankPosition.x / ObjectSize < positions[listIndex].x + threadhold &&
+            tankPosition.y / ObjectSize >= positions[listIndex].y &&
+            tankPosition.y / ObjectSize < positions[listIndex].y + threadhold
           ) {
+            // console.log("FINDED", mapIndex, tankPosition);
             listIndex++;
+            findedTankPosition = tankPosition;
             queue = [];
+            if (listIndex === positions.length) {
+              // console.log("BREAK", tankPosition);
+              // result.push(...revertRoad(findRoad, tankPosition as any));
+              break;
+            }
           }
-          if (listIndex === positions.length) {
-            result.push(...revertRoad(findRoad, tankPosition as any));
-            break;
-          }
-        }
-        for (let i = 0; i < orients.length; i++) {
-          const orient = orients[i];
-          const moveNextPosition = tankPositionAtNextTime(
-            tankPosition as never,
-            orient as never
-          );
+          let _orients = orients;
+          let _unOrients = unOrients;
           if (
-            !checkTankPositionIsObject(moveNextPosition as never) &&
-            !(
-              moveNextPosition!.x >= 848 ||
-              moveNextPosition!.x < 20 ||
-              moveNextPosition!.y >= 648 ||
-              moveNextPosition!.y < 20
-            )
+            mapIndex.startX !== positions[listIndex].x ||
+            mapIndex.startY !== positions[listIndex].y
           ) {
-            if (!findRoad?.[moveNextPosition.y]?.[moveNextPosition.x]) {
-              if (!findRoad?.[moveNextPosition.y]) {
-                findRoad[moveNextPosition.y] = {};
+            _orients = [];
+            _unOrients = [];
+            if (tankPosition.x < positions[listIndex].x * ObjectSize) {
+              _orients.push("RIGHT");
+              _unOrients.push("LEFT");
+            }
+            if (tankPosition.x > positions[listIndex].x * ObjectSize) {
+              _orients.push("LEFT");
+              _unOrients.push("RIGHT");
+            }
+            if (tankPosition.y < positions[listIndex].y * ObjectSize) {
+              _orients.push("DOWN");
+              _unOrients.push("UP");
+            }
+            if (tankPosition.y > positions[listIndex].y * ObjectSize) {
+              _orients.push("UP");
+              _unOrients.push("DOWN");
+            }
+            // console.log(tankPosition);
+            // console.log(mapIndex, positions[listIndex]);
+            // console.log(_orients);
+          }
+          // console.log(_orients, tankPosition, mapIndex, positions[listIndex]);
+          for (let i = 0; i < _orients.length; i++) {
+            const orient = _orients[i];
+            const moveNextPosition = tankPositionAtNextTime(
+              tankPosition as never,
+              orient as never
+            );
+            if (
+              !checkTankPositionIsObject(moveNextPosition as never) &&
+              !(
+                moveNextPosition!.x >= 848 ||
+                moveNextPosition!.x < 20 ||
+                moveNextPosition!.y >= 648 ||
+                moveNextPosition!.y < 20
+              )
+            ) {
+              if (!findRoad?.[moveNextPosition.y]?.[moveNextPosition.x]) {
+                if (!findRoad?.[moveNextPosition.y]) {
+                  findRoad[moveNextPosition.y] = {};
+                }
+                findRoad[moveNextPosition.y][moveNextPosition.x] =
+                  _unOrients[i];
+                queue.push({
+                  ...moveNextPosition,
+                  ms: (tankPosition?.ms ?? 0) + TankTimeSpeed,
+                });
               }
-              findRoad[moveNextPosition.y][moveNextPosition.x] = unOrients[i];
-              queue.push({
-                ...moveNextPosition,
-                ms: (tankPosition?.ms ?? 0) + TankTimeSpeed,
-              });
             }
           }
         }
       }
+    }
+    if (findedTankPosition) {
+      result.push(...revertRoad(findRoad, findedTankPosition as any));
     }
     return result;
   } catch (e) {

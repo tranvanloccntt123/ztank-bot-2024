@@ -17,8 +17,8 @@ saveMap(mapTest as any);
 
 saveTanks([
   {
-    x: 522,
-    y: 600,
+    x: 21,
+    y: 21,
     speed: 3,
     type: 1,
     uid: "9WTn1GyRD_D3NWm9AB8F",
@@ -37,8 +37,8 @@ saveTanks([
     color: 0,
   },
   {
-    x: 376,
-    y: 580,
+    x: 850,
+    y: 640,
     speed: 3,
     type: 1,
     uid: "gOvOWWx18Csd0vc2ABAw",
@@ -90,10 +90,10 @@ test("New find road", () => {
   findTargetTank();
   const readyLine = findRoadToReady(myTank!, 0);
   const onMapPositions = findTargetOnMap();
-  // console.log(onMapPositions);
+  console.log(onMapPositions);
   expect(onMapPositions.length).toBeGreaterThanOrEqual(1);
   if (onMapPositions.length) {
     const road = findRoadOnListMapIndex(myTank!, onMapPositions, 0);
-    expect(road.length).toBeGreaterThan(1);
+    expect(road.length).toBeGreaterThanOrEqual(1);
   }
 });
