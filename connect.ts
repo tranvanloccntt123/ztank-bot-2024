@@ -150,7 +150,6 @@ socket.on(Events.Shoot, (data: Bullet) => {
 });
 
 socket.on(Events.UserDisconnect, (data: string) => {
-  //
   if (!myTank) {
     joinMatch();
   } else {

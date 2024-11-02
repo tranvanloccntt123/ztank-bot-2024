@@ -324,7 +324,6 @@ export const saveMap = (map: MapMatch) => {
       }
     }
   }
-  console.log("Save Done");
   loadedMap = true;
 };
 
