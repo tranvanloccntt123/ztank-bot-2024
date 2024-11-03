@@ -349,79 +349,6 @@ export const saveBullets = (_bullets: Array<Bullet>) => {
   });
 };
 
-export const clearBulletNotWorking = () => {
-  Array.from(bullets.keys()).forEach((id) => {
-    if (!bullets.has(id)) {
-      return;
-    }
-    const bulletData = bullets.get(id);
-    if (!bulletData) {
-      return;
-    }
-    const runTimePosition = bulletPositionAtRunTime(bulletData);
-    if (!runTimePosition) {
-      return;
-    }
-    if (
-      runTimePosition?.x < 0 ||
-      runTimePosition?.x > MapSize.width ||
-      runTimePosition?.y < 0 ||
-      runTimePosition?.y > MapSize.height
-    ) {
-      bullets.delete(id);
-    } else {
-      if (
-        hasBlockPosition({
-          x: runTimePosition?.x ?? 0,
-          y: runTimePosition?.y ?? 0,
-        })
-      ) {
-        bullets.delete(id);
-      } else if (
-        hasBlockPosition({
-          x: (runTimePosition?.x ?? 0) + BulletSize,
-          y: (runTimePosition?.y ?? 0) + BulletSize,
-        })
-      ) {
-        bullets.delete(id);
-      }
-    }
-  });
-};
-
-/*
-KILLED {
-  x: 353.5,
-  y: 473.5,
-  orient: 'DOWN',
-  speed: 4,
-  type: 1,
-  size: 8,
-  uid: 'daJKGf6r0SD37j1JAAnb',
-  id: 321078
-}
-LOCAL {
-  x: 360,
-  y: 480,
-  speed: 3,
-  type: 1,
-  uid: 'U1kR0kFLDjaCboYcABG7',
-  orient: 'LEFT',
-  isAlive: false,
-  size: 33,
-  name: 'The Fool',
-  shootable: true,
-  movable: true,
-  shootCooldown: 0,
-  invulnerable: false,
-  protectCooldown: 0,
-  score: 203,
-  streak: 1,
-  bounty: 0,
-  color: 0
-}
-*/
-
 export const checkBulletInsideBlock = (position: Position) => {
   return (
     hasBlockPosition({
@@ -480,6 +407,13 @@ export const findTargetOnMap = () => {
       y: myTankIndex.y,
     },
   ];
+  const notSafeList: Array<Position> = [
+    targetTankIndex,
+    ...movePostionDirection.map((direction) => ({
+      x: targetTankIndex.x + direction.x,
+      y: targetTankIndex.y + direction.y,
+    })),
+  ];
   while (queue.length) {
     const currentPosition = queue.shift();
     if (!currentPosition) {
@@ -533,6 +467,9 @@ export const findTargetOnMap = () => {
         currentPosition.x + dir.x,
         currentPosition.y + dir.y
       );
+      if (notSafeList.find(notSafe => notSafe.x === moveNextPosition.x && notSafe.y === moveNextPosition.y)) {
+        continue;
+      }
       if (
         moveNextPosition.x < 1 ||
         moveNextPosition.x > 43 ||
@@ -863,68 +800,6 @@ export const findRoadOnListMapIndex = (
   }
 };
 
-export const findRoadToReady = (
-  tankPosition: Position & { orient: Orient },
-  ms: number
-) => {
-  try {
-    const result: Array<any> = [];
-    let findRoad: any = {
-      [tankPosition.y]: {
-        [tankPosition.x]: "ROOT",
-      },
-    };
-
-    if (tankPosition) {
-      const queue: Array<Position & { ms: number }> = [
-        { ...tankPosition, ms: ms },
-      ];
-
-      while (queue.length) {
-        const tankPosition = queue.shift();
-        if (tankPosition && tankPosition?.ms < 2000) {
-          const mapIdex = mapIndexOnMapMatch(tankPosition);
-          if (checkReadyPosition(mapIdex)) {
-            result.push(...revertRoad(findRoad, tankPosition as any));
-            break;
-          }
-        }
-        for (let i = 0; i < orients.length; i++) {
-          const orient = orients[i];
-          const moveNextPosition = tankPositionAtNextTime(
-            tankPosition as never,
-            orient as never
-          );
-          if (
-            !checkTankPositionIsObject(moveNextPosition as never) &&
-            !(
-              moveNextPosition!.x >= 848 ||
-              moveNextPosition!.x < 20 ||
-              moveNextPosition!.y >= 648 ||
-              moveNextPosition!.y < 20
-            )
-          ) {
-            if (!findRoad?.[moveNextPosition.y]?.[moveNextPosition.x]) {
-              if (!findRoad?.[moveNextPosition.y]) {
-                findRoad[moveNextPosition.y] = {};
-              }
-              findRoad[moveNextPosition.y][moveNextPosition.x] = unOrients[i];
-              queue.push({
-                ...moveNextPosition,
-                ms: (tankPosition?.ms ?? 0) + TankTimeSpeed,
-              });
-            }
-          }
-        }
-      }
-    }
-    return result;
-  } catch (e) {
-    console.log(e);
-    return [];
-  }
-};
-
 export const findRoadToTarget = (
   tankPosition: Position & { orient: Orient },
   ms: number
@@ -1005,7 +880,6 @@ export const findRoadToTarget = (
 
 export const dodgeBullets = (
   tankPosition: Position & { orient: Orient },
-  bullets: Array<Bullet>,
   ms: number
 ) => {
   //make dodge queue
@@ -1017,9 +891,17 @@ export const dodgeBullets = (
   let isSafe = true;
   const queue: Array<Position & { ms: number }> = [{ ...tankPosition, ms: ms }];
   const result: Array<any> = [];
+  const _bullets = Array.from(bullets.values());
   while (queue.length) {
     const _tankPosition = queue.shift();
-    if (safeArea(_tankPosition as never, bullets, _tankPosition?.ms as never)) {
+    if (
+      safeArea(
+        _tankPosition as never,
+        _bullets,
+        tanks,
+        _tankPosition?.ms as never
+      )
+    ) {
       //REVERT POSITION
       result.push(...revertRoad(dodgeRoad, _tankPosition as any));
       break;
@@ -1036,7 +918,7 @@ export const dodgeBullets = (
         !checkTankOverlap(moveNextPosition, tanks) &&
         !checkBulletsInsideTank(
           _tankPosition as never,
-          bullets,
+          _bullets,
           _tankPosition!.ms
         ) &&
         !(

@@ -14,6 +14,7 @@ import {
   MovePriority,
   bullets,
   clearRoad,
+  lastMoveTime,
   movePromise,
   myTank,
   resolveMovePromise,
@@ -40,6 +41,9 @@ const init = async () => {
   resolveShootPromise(true);
   while (true) {
     let canMoveNextPosition = false;
+    // if ((new Date().getTime() - lastMoveTime ?? 0) > 500) {
+    //   console.log("NOT MOVE", myTank, tanks.get("Pink1"));
+    // }
     try {
       if (road.index !== -1 && road.data.length && road.data[road.index]) {
         const orient = road.data[road.index];
@@ -50,7 +54,7 @@ const init = async () => {
           orient !== "SHOOT"
         ) {
           const nextPosition = tankAtNextTime(myTank, orient);
-          bullets.forEach((bullet) => {
+          for (const bullet of Array.from(bullets.values())) {
             const bulletPosition = bulletPositionAtPlusTime(
               bullet,
               TankTimeSpeed
@@ -72,32 +76,15 @@ const init = async () => {
                 checkBulletInsideTank(nextPosition, bulletPosition)
               ) {
                 canMoveNextPosition = false;
+                break;
               }
             }
-          });
-          if (canMoveNextPosition) {
-            tanks.forEach((tank) => {
-              if (tank.name === MY_NAME || !tank.shootable) {
-                return;
-              }
-              if (
-                (isSameVerticalAxisWithSize(tank, {
-                  ...nextPosition,
-                  size: TankSize,
-                }) ||
-                  isSameHorizontalAxisWithSize(tank, {
-                    ...nextPosition,
-                    size: TankSize,
-                  })) &&
-                euclideanDistance(tank, { ...nextPosition }) <= TankSize * 2
-              ) {
-                canMoveNextPosition = false;
-              }
-            });
           }
         }
         if (orient === "SHOOT") {
-          await sleep(1);
+          if (canMoveNextPosition) {
+            await sleep(1);
+          }
           shoot();
           road.index = road.index + 1;
         }
@@ -115,9 +102,12 @@ const init = async () => {
         if (road.index === road.data.length) {
           clearRoad();
         }
+      } else {
+        clearRoad();
       }
     } catch (e) {
       console.log("MAIN", e);
+      clearRoad();
     } finally {
       if (!canMoveNextPosition) {
         await sleep(1);

@@ -15,6 +15,7 @@ import {
   bullets,
   hasBlockPosition,
   hasObjectPosition,
+  isReboring,
   isReborn,
   myTank,
 } from "./store";
@@ -511,16 +512,17 @@ export const bulletInsideTankVertical = (
   tankPosition: Position,
   bulletPosition: Position
 ) => {
+  const threshould = TankSpeed + 1;
   return (
     _.inRange(
       bulletPosition?.x ?? 0,
-      tankPosition.x - 1,
-      tankPosition.x + TankSize + 2
+      tankPosition.x - threshould,
+      tankPosition.x + TankSize + threshould + 1
     ) ||
     _.inRange(
       (bulletPosition?.x ?? 0) + BulletSize,
-      tankPosition.x - 1,
-      tankPosition.x + TankSize + 1 + 2
+      tankPosition.x - threshould,
+      tankPosition.x + TankSize + 1 + threshould
     )
   );
 };
@@ -532,13 +534,13 @@ export const otherTankInsideVertical = (tank: Position) => {
   return (
     _.inRange(
       tank?.x ?? 0,
-      myTank.x + (TankSize / 2 - BulletSize / 2),
-      myTank.x + TankSize - (TankSize / 2 - BulletSize / 2)
+      myTank.x + (TankSize / 2 - BulletSize),
+      myTank.x + TankSize - (TankSize / 2 - BulletSize)
     ) ||
     _.inRange(
       (tank?.x ?? 0) + TankSize,
       myTank.x + (TankSize / 2 - BulletSize / 2),
-      myTank.x + TankSize - (TankSize / 2 - BulletSize / 2)
+      myTank.x + TankSize - (TankSize / 2 - BulletSize)
     ) ||
     _.inRange(
       myTank.x + (TankSize / 2 - BulletSize / 2),
@@ -546,7 +548,7 @@ export const otherTankInsideVertical = (tank: Position) => {
       tank.x + TankSize
     ) ||
     _.inRange(
-      myTank.x + (TankSize / 2 - BulletSize / 2) + BulletSize,
+      myTank.x + (TankSize / 2 - BulletSize) + BulletSize,
       tank.x,
       tank.x + TankSize
     )
@@ -560,21 +562,21 @@ export const otherTankInsideHorizontal = (tank: Position) => {
   return (
     _.inRange(
       tank?.y ?? 0,
-      myTank.y + (TankSize / 2 - BulletSize / 2),
-      myTank.y + TankSize - (TankSize / 2 - BulletSize / 2)
+      myTank.y + (TankSize / 2 - BulletSize),
+      myTank.y + TankSize - (TankSize / 2 - BulletSize)
     ) ||
     _.inRange(
       (tank?.y ?? 0) + TankSize,
-      myTank.y + (TankSize / 2 - BulletSize / 2),
-      myTank.y + TankSize - (TankSize / 2 - BulletSize / 2)
+      myTank.y + (TankSize / 2 - BulletSize),
+      myTank.y + TankSize - (TankSize / 2 - BulletSize)
     ) ||
     _.inRange(
-      myTank.y + (TankSize / 2 - BulletSize / 2),
+      myTank.y + (TankSize / 2 - BulletSize),
       tank.y,
       tank.y + TankSize
     ) ||
     _.inRange(
-      myTank.y + (TankSize / 2 - BulletSize / 2) + BulletSize,
+      myTank.y + (TankSize / 2 - BulletSize) + BulletSize,
       tank.y,
       tank.y + TankSize
     )
@@ -585,16 +587,17 @@ export const bulletInsideTankHorizontal = (
   tankPosition: Position,
   bulletPosition: Position
 ) => {
+  const threshould = TankSpeed + 1;
   return (
     _.inRange(
       bulletPosition?.y ?? 0,
-      tankPosition.y - 1,
-      tankPosition.y + TankSize + 2
+      tankPosition.y - threshould,
+      tankPosition.y + TankSize + threshould + 1
     ) ||
     _.inRange(
       (bulletPosition?.y ?? 0) + BulletSize,
-      tankPosition.y - 1,
-      tankPosition.y + TankSize + 2
+      tankPosition.y - threshould,
+      tankPosition.y + TankSize + threshould + 1
     )
   );
 };
@@ -650,6 +653,7 @@ export const checkBulletRunningToTank = (
 export const safeArea = (
   tankPosition: Position,
   bullets: Array<Bullet>,
+  tanks: Map<string, Tank>,
   ms: number
 ) => {
   for (const bullet of bullets) {
@@ -663,7 +667,35 @@ export const safeArea = (
       return false;
     }
   }
-  return true;
+  let checkTank = true;
+  tanks.forEach((tank) => {
+    if (
+      tank.name !== MY_NAME &&
+      euclideanDistance(tank, tankPosition) < TankSize * 3 &&
+      isReborn.has(tank.name)
+    ) {
+      if (
+        isSameVerticalAxisWithSize(tank, { ...tankPosition, size: TankSize })
+      ) {
+        if (tank.orient === "DOWN" && tank.y < tankPosition.y) {
+          checkTank = false;
+        }
+        if (tank.orient === "UP" && tank.y > tankPosition.y) {
+          checkTank = false;
+        }
+      } else if (
+        isSameHorizontalAxisWithSize(tank, { ...tankPosition, size: TankSize })
+      ) {
+        if (tank.orient === "LEFT" && tank.x > tankPosition.x) {
+          checkTank = false;
+        }
+        if (tank.orient === "RIGHT" && tank.x < tankPosition.x) {
+          checkTank = false;
+        }
+      }
+    }
+  });
+  return checkTank;
 };
 
 export const checkBulletsInsideTank = (

@@ -101,10 +101,10 @@ socket.on(Events.Reborn, (data: Tank) => {
 });
 
 socket.on(Events.Move, (data: Tank) => {
-  saveTanks([data]);
-  if (data.name === MY_NAME) {
+  if (data.name === MY_NAME && (data.x !== myTank?.x || data.y !== myTank?.y)) {
     saveLastMoveTime(new Date().getTime());
   }
+  saveTanks([data]);
 });
 
 socket.on(
@@ -115,13 +115,15 @@ socket.on(
     bullet: Bullet;
     tanks: Array<Tank>;
   }) => {
-    tanks.delete(data?.killed?.name);
     saveTanks([...data.tanks, data?.killer]);
     isReboring(data?.killed?.name);
     setTimeout(() => {
       clearIsReboring(data?.killed?.name);
     }, 2800);
     if (data.killed?.name === MY_NAME) {
+      // console.log(bullets)
+      // console.log(data.killed);
+      // console.log(data.bullet);
       clearRoad();
       saveTargetTankName("");
     }

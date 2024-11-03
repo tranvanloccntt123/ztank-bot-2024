@@ -11,8 +11,6 @@ import {
   bullets,
   dodgeBullets,
   findRoadOnListMapIndex,
-  findRoadToReady,
-  findRoadToTarget,
   findTargetOnMap,
   findTargetTank,
   findToBlockNearest,
@@ -20,7 +18,6 @@ import {
   hasBlockPosition,
   isReborn,
   isShootAble,
-  lastMoveTime,
   mapMatch,
   myTank,
   road,
@@ -35,6 +32,7 @@ import {
   otherTankInsideHorizontal,
   otherTankInsideVertical,
 } from "./utils";
+import { shoot } from "./connect";
 
 export const startTrickShootSystem = async () => {
   await startPromise;
@@ -44,8 +42,7 @@ export const startTrickShootSystem = async () => {
         (myTank?.shootable || isShootAble) &&
         myTank &&
         myTank.x &&
-        myTank.y &&
-        road.priority > MovePriority.SHOOT
+        myTank.y
       ) {
         Array.from(tanks.values())
           .sort((a, b) => {
@@ -85,19 +82,22 @@ export const startTrickShootSystem = async () => {
               )
             ) {
               if (myTank?.orient === "UP" && tank.y < (myTank?.y ?? 0)) {
-                saveRoad(MovePriority.SHOOT, ["SHOOT"]);
+                shoot();
               } else if (
                 myTank?.orient === "DOWN" &&
                 tank.y > (myTank?.y ?? 0)
               ) {
-                saveRoad(MovePriority.SHOOT, ["SHOOT"]);
+                shoot();
               } else {
-                if (tank.y < (myTank?.y ?? 0)) {
-                  saveRoad(MovePriority.SHOOT, ["UP", "SHOOT"]);
-                } else {
-                  saveRoad(MovePriority.SHOOT, ["DOWN", "SHOOT"]);
+                if (road.priority > MovePriority.SHOOT) {
+                  if (tank.y < (myTank?.y ?? 0)) {
+                    saveRoad(MovePriority.SHOOT, ["UP", "SHOOT"]);
+                  } else {
+                    saveRoad(MovePriority.SHOOT, ["DOWN", "SHOOT"]);
+                  }
                 }
               }
+              return;
             }
             //Horizontal
             if (
@@ -116,19 +116,22 @@ export const startTrickShootSystem = async () => {
               )
             ) {
               if (myTank?.orient === "LEFT" && tank.x < (myTank?.x ?? 0)) {
-                saveRoad(MovePriority.SHOOT, ["SHOOT"]);
+                shoot();
               } else if (
                 myTank?.orient === "RIGHT" &&
                 tank.x > (myTank?.x ?? 0)
               ) {
-                saveRoad(MovePriority.SHOOT, ["SHOOT"]);
+                shoot();
               } else {
-                if (tank.x < (myTank?.x ?? 0)) {
-                  saveRoad(MovePriority.SHOOT, ["LEFT", "SHOOT"]);
-                } else {
-                  saveRoad(MovePriority.SHOOT, ["RIGHT", "SHOOT"]);
+                if (road.priority > MovePriority.SHOOT) {
+                  if (tank.x < (myTank?.x ?? 0)) {
+                    saveRoad(MovePriority.SHOOT, ["LEFT", "SHOOT"]);
+                  } else {
+                    saveRoad(MovePriority.SHOOT, ["RIGHT", "SHOOT"]);
+                  }
                 }
               }
+              return;
             }
           });
       }
@@ -210,11 +213,7 @@ export const startDodgeRoadSystem = async () => {
     try {
       if (myTank && !isReborn.has(myTank.name)) {
         if (bullets.size) {
-          const _dodge = dodgeBullets(
-            { x: myTank.x, y: myTank.y, orient: myTank.orient },
-            Array.from(bullets.values()),
-            0
-          );
+          const _dodge = dodgeBullets(myTank, 0);
           if (!_dodge.isSafe && _dodge.result.length >= 1) {
             saveRoad(
               MovePriority.DODGE,
