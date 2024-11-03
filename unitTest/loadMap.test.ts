@@ -22,19 +22,19 @@ import {
   otherTankInsideVertical,
 } from "../utils";
 
-import { mapTest } from "./mapTest";
+import { mapTest } from "./map1Test";
 
 saveMap(mapTest as any);
 
 saveTanks([
   {
-    x: 302,
-    y: 315,
+    x: 667,
+    y: 32,
     speed: 3,
     type: 1,
-    uid: "NCzESvuC0Ba70xlzAABx",
-    orient: "DOWN",
-    isAlive: false,
+    uid: "St3F4HFo6JZzLB2qAAFH",
+    orient: "RIGHT",
+    isAlive: true,
     size: 33,
     name: "The Fool",
     shootable: true,
@@ -42,30 +42,30 @@ saveTanks([
     shootCooldown: 0,
     invulnerable: false,
     protectCooldown: 0,
-    score: 70,
-    streak: 1,
-    bounty: 0,
-    color: 0,
+    score: 20,
+    streak: 2,
+    bounty: 3,
+    color: 1,
   },
   {
-    x: 700,
-    y: 300,
+    x: 765,
+    y: 190,
     speed: 3,
     type: 1,
-    uid: "gOvOWWx18Csd0vc2ABAw",
-    orient: "UP",
+    uid: "8dTOBtblMpjylpaPAACj",
+    orient: "DOWN",
     isAlive: true,
     size: 33,
     name: "zarenabot",
-    shootable: false,
-    movable: true,
-    shootCooldown: 39,
+    shootable: true,
+    movable: false,
+    shootCooldown: 0,
     invulnerable: false,
     protectCooldown: 0,
-    score: 45227,
-    streak: 1,
+    score: 2250,
+    streak: 0,
     bounty: 0,
-    color: 3,
+    color: 0,
   },
 ]);
 
@@ -104,6 +104,7 @@ test("Dodge", () => {
 test("New find road", () => {
   findTargetTank();
   const onMapPositions = findTargetOnMap();
+  console.log(onMapPositions);
   expect(onMapPositions.length).toBeGreaterThanOrEqual(1);
   if (onMapPositions.length) {
     const road = findRoadOnListMapIndex(myTank!, onMapPositions, 0);

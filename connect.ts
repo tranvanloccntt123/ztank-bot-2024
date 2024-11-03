@@ -6,6 +6,7 @@ import {
   SERVER_1,
   SERVER_2,
   SERVER_3,
+  ShootAbleTime,
   TankTimeSpeed,
   Token,
 } from "./constants";
@@ -33,6 +34,7 @@ import {
   targetTankName,
   saveTargetTankName,
   saveLastMoveTime,
+  isShootAble,
 } from "./store";
 
 import dotenv from "dotenv";
@@ -60,9 +62,14 @@ export const joinMatch = () => {
 };
 
 export const shoot = () => {
-  resetShootPromise();
-  saveIsShootAble(false);
-  socket.emit(EmitEvent.Shoot);
+  if (isShootAble) {
+    resetShootPromise();
+    saveIsShootAble(false);
+    socket.emit(EmitEvent.Shoot);
+    setTimeout(() => {
+      saveIsShootAble(true);
+    }, ShootAbleTime);
+  }
 };
 
 export const moveTank = (orient: Orient) => {
@@ -115,7 +122,7 @@ socket.on(
     bullet: Bullet;
     tanks: Array<Tank>;
   }) => {
-    saveTanks([...data.tanks, data?.killer]);
+    saveTanks([data.killed, ...data.tanks, data?.killer]);
     isReboring(data?.killed?.name);
     setTimeout(() => {
       clearIsReboring(data?.killed?.name);
@@ -138,16 +145,15 @@ socket.on(
 );
 
 socket.on(Events.Shoot, (data: Bullet) => {
-  const name = tanksId.get(data.uid);
+  // const name = tanksId.get(data.uid);
   // console.log(data);
-  const tank = tanks.get(name ?? "");
-  if (tank) {
-    saveTanks([{ ...tank, x: data.x, y: data.y }]);
-  }
+  // const tank = tanks.get(name ?? "");
+  // if (tank) {
+  //   saveTanks([{ ...tank, x: data.x, y: data.y }]);
+  // }
   saveBullets([{ ...data, time: new Date().getTime() }]);
   if (data.uid === myTank?.uid) {
     resolveShootPromise(true);
-    saveIsShootAble(true);
   }
 });
 

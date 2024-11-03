@@ -379,6 +379,158 @@ const movePostionDirection = [
   { x: 0, y: -1 }, // Di chuyển theo y-
 ];
 
+export const findTargetTankV2 = () => {
+  if (!myTank || !myTank.x || !myTank.y) {
+    return [];
+  }
+  const _tanks = Array.from(tanks.values());
+  let isFinding = false;
+  const tankVisible: Array<Tank> = [];
+  const tankMapIndex: Array<Position> = [];
+  for (const tank of _tanks) {
+    if (!isReborn.has(tank.name)) {
+      isFinding = true;
+      tankVisible.push(tank);
+      tankMapIndex.push(
+        initPosition(
+          Math.floor(tank.x / ObjectSize),
+          Math.floor(tank.y / ObjectSize)
+        )
+      );
+    }
+  }
+  const myTankIndex = initPosition(
+    Math.floor(myTank.x / ObjectSize),
+    Math.floor(myTank.y / ObjectSize)
+  );
+  const result: Array<Position> = [];
+  const checked: any = {
+    [myTankIndex.y]: {
+      [myTankIndex.x]: null,
+    },
+  };
+  const queue: Array<Position> = [
+    {
+      x: myTankIndex.x,
+      y: myTankIndex.y,
+    },
+  ];
+  const notSafeList: Array<Position> = [
+    ...tankMapIndex,
+    ...tankMapIndex
+      .map((targetTankIndex) =>
+        movePostionDirection.map((direction) => ({
+          x: targetTankIndex.x + direction.x,
+          y: targetTankIndex.y + direction.y,
+        }))
+      )
+      .flat(),
+  ];
+  while (queue.length) {
+    const currentPosition = queue.shift();
+    if (!currentPosition) {
+      continue;
+    }
+    let finded = false;
+    for (const index in tankMapIndex) {
+      const targetTankIndex = tankMapIndex[index];
+      if (
+        ((targetTankIndex.x === currentPosition.x &&
+          !hasBlockBetweenObjects(
+            {
+              x: currentPosition.x * ObjectSize,
+              y: currentPosition.y * ObjectSize,
+              size: TankSize,
+            },
+            {
+              x: targetTankIndex.x * ObjectSize,
+              y: targetTankIndex.y * ObjectSize,
+              size: TankSize,
+            },
+            false
+          )) ||
+          (targetTankIndex.y === currentPosition.y &&
+            !hasBlockBetweenObjects(
+              {
+                x: currentPosition.x * ObjectSize,
+                y: currentPosition.y * ObjectSize,
+                size: TankSize,
+              },
+              {
+                x: targetTankIndex.x * ObjectSize,
+                y: targetTankIndex.y * ObjectSize,
+                size: TankSize,
+              }
+            ))) &&
+        euclideanDistance(currentPosition, targetTankIndex) >= 3
+      ) {
+        //finded
+        result.unshift(currentPosition as never);
+        let position =
+          checked[currentPosition?.y ?? ""][currentPosition?.x ?? ""];
+        while (
+          position !== null &&
+          (position?.x !== myTankIndex.x || position?.y !== myTankIndex.y)
+        ) {
+          result.unshift(position as never);
+          position = checked[position?.y ?? ""][position?.x ?? ""];
+        }
+        finded = true;
+        saveTargetTankName(tankVisible[index].name);
+        break;
+      }
+    }
+    if (finded) {
+      break;
+    }
+    for (let dir of movePostionDirection) {
+      const moveNextPosition = initPosition(
+        currentPosition.x + dir.x,
+        currentPosition.y + dir.y
+      );
+      if (
+        notSafeList.find(
+          (notSafe) =>
+            notSafe.x === moveNextPosition.x && notSafe.y === moveNextPosition.y
+        )
+      ) {
+        continue;
+      }
+      if (
+        moveNextPosition.x < 1 ||
+        moveNextPosition.x > 43 ||
+        moveNextPosition.y < 1 ||
+        moveNextPosition.y > 33 ||
+        ["B", "T", "W"].includes(
+          mapMatch[moveNextPosition.y][moveNextPosition.x] as never
+        ) ||
+        ["B", "T", "W"].includes(
+          mapMatch[moveNextPosition.y][moveNextPosition.x + 1] as never
+        ) ||
+        ["B", "T", "W"].includes(
+          mapMatch[moveNextPosition.y + 1][moveNextPosition.x] as never
+        ) ||
+        ["B", "T", "W"].includes(
+          mapMatch[moveNextPosition.y + 1][moveNextPosition.x + 1] as never
+        )
+      ) {
+        continue;
+      }
+      if (!checked?.[moveNextPosition.y]?.[moveNextPosition.x]) {
+        if (!checked?.[moveNextPosition.y]) {
+          checked[moveNextPosition.y] = {};
+        }
+        checked[moveNextPosition.y][moveNextPosition.x] = {
+          x: currentPosition.x,
+          y: currentPosition.y,
+        };
+        queue.push(moveNextPosition);
+      }
+    }
+  }
+  return result;
+};
+
 export const findTargetOnMap = () => {
   if (targetTankName === "" || !myTank || !myTank.x || !myTank.y) {
     return [];
@@ -467,7 +619,12 @@ export const findTargetOnMap = () => {
         currentPosition.x + dir.x,
         currentPosition.y + dir.y
       );
-      if (notSafeList.find(notSafe => notSafe.x === moveNextPosition.x && notSafe.y === moveNextPosition.y)) {
+      if (
+        notSafeList.find(
+          (notSafe) =>
+            notSafe.x === moveNextPosition.x && notSafe.y === moveNextPosition.y
+        )
+      ) {
         continue;
       }
       if (
