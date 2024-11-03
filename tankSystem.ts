@@ -33,6 +33,7 @@ import {
   otherTankInsideHorizontal,
   otherTankInsideVertical,
 } from "./utils";
+import { shoot } from "./connect";
 
 export const startTrickShootSystem = async () => {
   await startPromise;
@@ -82,12 +83,18 @@ export const startTrickShootSystem = async () => {
                 )
               ) {
                 if (myTank?.orient === "UP" && tank.y < (myTank?.y ?? 0)) {
-                  saveRoad(MovePriority.SHOOT, ["SHOOT"]);
+                  // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
+                  if (euclideanDistance(tank, myTank) <= TankSize * 2.5) {
+                    shoot();
+                  }
                 } else if (
                   myTank?.orient === "DOWN" &&
                   tank.y > (myTank?.y ?? 0)
                 ) {
-                  saveRoad(MovePriority.SHOOT, ["SHOOT"]);
+                  // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
+                  if (euclideanDistance(tank, myTank) <= TankSize * 2.5) {
+                    shoot();
+                  }
                 } else {
                   if (tank.y < (myTank?.y ?? 0)) {
                     saveRoad(MovePriority.SHOOT, ["UP", "SHOOT"]);
@@ -99,28 +106,34 @@ export const startTrickShootSystem = async () => {
               }
             }
             //Horizontal
-            if (
-              otherTankInsideHorizontal(tank)
-            ) {
-              if (!hasBlockBetweenObjects(
-                {
-                  x: myTank.x,
-                  y: myTank.y + (TankSize / 2 - BulletSize / 2) - 2,
-                  size: BulletSize,
-                },
-                {
-                  x: tank.x,
-                  y: myTank.y + (TankSize / 2 - BulletSize / 2) - 2,
-                  size: BulletSize,
-                }
-              )) {
+            if (otherTankInsideHorizontal(tank)) {
+              if (
+                !hasBlockBetweenObjects(
+                  {
+                    x: myTank.x,
+                    y: myTank.y + (TankSize / 2 - BulletSize / 2) - 2,
+                    size: BulletSize,
+                  },
+                  {
+                    x: tank.x,
+                    y: myTank.y + (TankSize / 2 - BulletSize / 2) - 2,
+                    size: BulletSize,
+                  }
+                )
+              ) {
                 if (myTank?.orient === "LEFT" && tank.x < (myTank?.x ?? 0)) {
-                  saveRoad(MovePriority.SHOOT, ["SHOOT"]);
+                  // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
+                  if (euclideanDistance(tank, myTank) <= TankSize * 2.5) {
+                    shoot();
+                  }
                 } else if (
                   myTank?.orient === "RIGHT" &&
                   tank.x > (myTank?.x ?? 0)
                 ) {
-                  saveRoad(MovePriority.SHOOT, ["SHOOT"]);
+                  // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
+                  if (euclideanDistance(tank, myTank) <= TankSize * 2.5) {
+                    shoot();
+                  }
                 } else {
                   if (tank.x < (myTank?.x ?? 0)) {
                     saveRoad(MovePriority.SHOOT, ["LEFT", "SHOOT"]);
@@ -245,9 +258,18 @@ export const findTargetSystem = async () => {
         myTank.y &&
         road.priority > MovePriority.NORMAL
       ) {
-        const func = targetTankName === "" || Boolean(targetTankName) === false ? findTargetTankV2 : findTargetOnMap;
+        const func =
+          targetTankName === "" || Boolean(targetTankName) === false
+            ? findTargetTankV2
+            : findTargetOnMap;
         const onMapPositions = func();
-        const _road = findRoadOnListMapIndex(myTank!, onMapPositions, 0);
+        const _road = findRoadOnListMapIndex(
+          myTank!,
+          onMapPositions.length > 4
+            ? onMapPositions.slice(0, 3)
+            : onMapPositions,
+          0
+        );
         if (_road.length >= 1) {
           saveRoad(
             MovePriority.NORMAL,
@@ -264,7 +286,7 @@ export const findTargetSystem = async () => {
           );
           if (_roadToBlock.length > 1) {
             saveRoad(
-              MovePriority.NORMAL,
+              MovePriority.RANDOM_BLOCK,
               _roadToBlock.slice(1).map((v) => v.orient)
             );
           }

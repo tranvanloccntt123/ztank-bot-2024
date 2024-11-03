@@ -83,6 +83,8 @@ export const MovePriority = {
   DODGE: 0,
   SHOOT: 1,
   NORMAL: 2,
+  RANDOM_BLOCK: 3,
+  CLEAR: 9999,
 };
 
 export let road: {
@@ -90,7 +92,7 @@ export let road: {
   data: Array<Orient | "SHOOT">;
   index: number;
 } = {
-  priority: 3,
+  priority: MovePriority.CLEAR,
   data: [],
   index: -1,
 };
@@ -124,7 +126,7 @@ export const resetMovePromise = () => {
 };
 
 export const clearRoad = () => {
-  road.priority = 3;
+  road.priority = MovePriority.CLEAR;
   road.data = [];
   road.index = -1;
 };
