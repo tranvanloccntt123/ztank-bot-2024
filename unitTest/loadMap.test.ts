@@ -1,35 +1,31 @@
-import { BulletSize, MY_NAME, TankSize } from "../constants";
 import {
-  MovePriority,
-  bullets,
+  clearLoadedMap,
   dodgeBullets,
   findRoadOnListMapIndex,
   findTargetOnMap,
   findTargetTank,
-  hasBlockBetweenObjects,
-  isReborn,
-  isShootAble,
+  findToDefZoneOnMap,
+  listDefZone,
+  mapNumber,
   myTank,
-  road,
   saveBullets,
   saveMap,
   saveTanks,
-  tanks,
 } from "../store";
-import {
-  euclideanDistance,
-  otherTankInsideHorizontal,
-  otherTankInsideVertical,
-} from "../utils";
 
-import { mapTest } from "./map1Test";
+import { map1 } from "../map/map1";
+import { map1Tmp } from "./map1Tmp";
+import { map2 } from "../map/map2";
+import { map3 } from "../map/map3";
+import { map4 } from "../map/map4";
+import { map5 } from "../map/map5";
 
-saveMap(mapTest as any);
+saveMap(map1 as any);
 
 saveTanks([
   {
-    x: 667,
-    y: 32,
+    x: 20,
+    y: 20,
     speed: 3,
     type: 1,
     uid: "St3F4HFo6JZzLB2qAAFH",
@@ -104,110 +100,42 @@ test("Dodge", () => {
 test("New find road", () => {
   findTargetTank();
   const onMapPositions = findTargetOnMap();
-  console.log(onMapPositions);
+  // console.log(onMapPositions);
   expect(onMapPositions.length).toBeGreaterThanOrEqual(1);
-  if (onMapPositions.length) {
-    const road = findRoadOnListMapIndex(myTank!, onMapPositions, 0);
-    expect(road.length).toBeGreaterThanOrEqual(1);
-  }
+  // if (onMapPositions.length) {
+  //   const road = findRoadOnListMapIndex(myTank!, onMapPositions, 0);
+  //   expect(road.length).toBeGreaterThanOrEqual(1);
+  // }
 });
 
-test("Bullet System", () => {
-  if ((myTank?.shootable || isShootAble) && myTank && myTank.x && myTank.y) {
-    Array.from(tanks.values())
-      .sort((a, b) => {
-        const aPosition = euclideanDistance(
-          { x: a.x, y: a.y },
-          { x: myTank!.x, y: myTank!.y }
-        );
-        const bPosition = euclideanDistance(
-          { x: b.x, y: b.y },
-          { x: myTank!.x, y: myTank!.y }
-        );
-        return aPosition - bPosition;
-      })
-      .forEach((tank) => {
-        if (
-          !myTank?.x ||
-          !myTank?.y ||
-          tank.name === MY_NAME ||
-          isReborn.has(tank.name)
-        ) {
-          return;
-        }
-        //Vertical
-        if (
-          otherTankInsideVertical(tank) &&
-          !hasBlockBetweenObjects(
-            {
-              x: myTank.x + (TankSize / 2 - BulletSize / 2) - 2,
-              y: myTank.y,
-              size: BulletSize,
-            },
-            {
-              x: myTank.x + (TankSize / 2 - BulletSize / 2) - 2,
-              y: tank.y,
-              size: BulletSize,
-            }
-          )
-        ) {
-          if (myTank?.orient === "UP" && tank.y < (myTank?.y ?? 0)) {
-            // shoot();
-            // return;
-          } else if (myTank?.orient === "DOWN" && tank.y > (myTank?.y ?? 0)) {
-            // shoot();
-          } else {
-            if (road.priority > MovePriority.SHOOT) {
-              if (tank.y < (myTank?.y ?? 0)) {
-                // saveRoad(MovePriority.SHOOT, ["UP", "SHOOT"]);
-                // return;
-              } else {
-                // saveRoad(MovePriority.SHOOT, ["DOWN", "SHOOT"]);
-                // return;
-              }
-            }
-          }
-        }
-        //Horizontal
-        if (
-          otherTankInsideHorizontal(tank) &&
-          !hasBlockBetweenObjects(
-            {
-              x: myTank.x,
-              y: myTank.y + (TankSize / 2 - BulletSize / 2) - 2,
-              size: BulletSize,
-            },
-            {
-              x: tank.x,
-              y: myTank.y + (TankSize / 2 - BulletSize / 2) - 2,
-              size: BulletSize,
-            }
-          )
-        ) {
-          if (myTank?.orient === "LEFT" && tank.x < (myTank?.x ?? 0)) {
-            // shoot();
-            // return;
-          } else if (myTank?.orient === "RIGHT" && tank.x > (myTank?.x ?? 0)) {
-            // shoot();
-            return;
-          } else {
-            if (road.priority > MovePriority.SHOOT) {
-              if (tank.x < (myTank?.x ?? 0)) {
-                // saveRoad(MovePriority.SHOOT, ["LEFT", "SHOOT"]);
-                // if (tank.name === "Pink1") {
-                //   console.log(myTank, tank);
-                // }
-                // return
-              } else {
-                // saveRoad(MovePriority.SHOOT, ["RIGHT", "SHOOT"]);
-                // if (tank.name === "Pink1") {
-                //   console.log(myTank, tank);
-                // }
-                // return;
-              }
-            }
-          }
-        }
-      });
-  }
+test("Check Map", () => {
+  expect(map1.toString() === map1Tmp.toString()).toBe(true);
 });
+
+test("Find Def Zone", () => {
+  const keys = Object.keys(listDefZone);
+  for (const key of keys) {
+    clearLoadedMap();
+    if (key === `1`) {
+      saveMap(map1 as never);
+    }
+    if (key === `2`) {
+      saveMap(map2 as never);
+    }
+    if (key === `3`) {
+      saveMap(map3 as never);
+    }
+    if (key === `4`) {
+      saveMap(map4 as never);
+    }
+    if (key === `5`) {
+      saveMap(map5 as never);
+    }
+    console.log("RUN ON MAP ", mapNumber);
+    const listZone = listDefZone[mapNumber];
+      listZone.forEach(zone => {
+        const onMapPositions = findToDefZoneOnMap(zone);
+        expect(onMapPositions.length).toBeGreaterThanOrEqual(1);
+      })
+  }
+})

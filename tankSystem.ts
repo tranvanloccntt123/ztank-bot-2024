@@ -15,6 +15,7 @@ import {
   findTargetTank,
   findTargetTankV2,
   findToBlockNearest,
+  findToDefZoneOnMap,
   hasBlockBetweenObjects,
   hasBlockPosition,
   isReborn,
@@ -62,7 +63,8 @@ export const startTrickShootSystem = async () => {
               !myTank?.x ||
               !myTank?.y ||
               tank.name === MY_NAME ||
-              isReborn.has(tank.name)
+              isReborn.has(tank.name) ||
+              !(myTank?.shootable || isShootAble)
             ) {
               return;
             }
@@ -84,7 +86,7 @@ export const startTrickShootSystem = async () => {
               ) {
                 if (myTank?.orient === "UP" && tank.y < (myTank?.y ?? 0)) {
                   // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
-                  if (euclideanDistance(tank, myTank) <= TankSize * 2.5) {
+                  if (euclideanDistance(tank, myTank) <= TankSize * 4) {
                     shoot();
                   }
                 } else if (
@@ -258,16 +260,14 @@ export const findTargetSystem = async () => {
         myTank.y &&
         road.priority > MovePriority.NORMAL
       ) {
-        const func =
-          targetTankName === "" || Boolean(targetTankName) === false
-            ? findTargetTankV2
-            : findTargetOnMap;
-        const onMapPositions = func();
+        // const func =
+        //   targetTankName === "" || Boolean(targetTankName) === false
+        //     ? findTargetTankV2
+        //     : findTargetOnMap;
+        const findLine = findTargetTankV2();
         const _road = findRoadOnListMapIndex(
           myTank!,
-          onMapPositions.length > 4
-            ? onMapPositions.slice(0, 3)
-            : onMapPositions,
+          findLine.length > 4 ? findLine.slice(0, 3) : findLine,
           0
         );
         if (_road.length >= 1) {
@@ -279,16 +279,33 @@ export const findTargetSystem = async () => {
           if (targetTankName) {
             console.log("NOT FOUND ROAD", myTank, tanks.get(targetTankName));
           }
-          findTargetTank(targetTankName);
-          const _roadToBlock = findToBlockNearest(
-            { x: myTank.x, y: myTank.y, orient: myTank.orient },
-            0
-          );
-          if (_roadToBlock.length > 1) {
-            saveRoad(
-              MovePriority.RANDOM_BLOCK,
-              _roadToBlock.slice(1).map((v) => v.orient)
+          // findTargetTank(targetTankName);
+          if (road.priority > MovePriority.RANDOM_BLOCK) {
+            const _roadToDefArea = findToDefZoneOnMap();
+            if (_roadToDefArea.length >= 1) {
+              const findLineToDefArea = findRoadOnListMapIndex(
+                myTank!,
+                _roadToDefArea,
+                0
+              );
+              if (findLineToDefArea.length > 1) {
+                saveRoad(
+                  MovePriority.RANDOM_BLOCK,
+                  findLineToDefArea.map((v) => v.orient)
+                );
+                return;
+              }
+            }
+            const _roadToBlock = findToBlockNearest(
+              { x: myTank.x, y: myTank.y, orient: myTank.orient },
+              0
             );
+            if (_roadToBlock.length > 1) {
+              saveRoad(
+                MovePriority.RANDOM_BLOCK,
+                _roadToBlock.slice(1).map((v) => v.orient)
+              );
+            }
           }
         }
       }

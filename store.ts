@@ -1,14 +1,11 @@
 import {
   BulletSize,
   MY_NAME,
-  MapSize,
   ObjectSize,
-  TankOnObjectPercent,
   TankSize,
   TankTimeSpeed,
 } from "./constants";
 import {
-  bulletPositionAtRunTime,
   safeArea,
   checkBulletsInsideTank,
   checkTankPositionIsObject,
@@ -22,6 +19,11 @@ import {
   mapIndexOnMapMatch,
 } from "./utils";
 import * as _ from "lodash";
+import { map1 } from "./map/map1";
+import { map2 } from "./map/map2";
+import { map3 } from "./map/map3";
+import { map4 } from "./map/map4";
+import { map5 } from "./map/map5";
 
 export const tanks: Map<string, Tank> = new Map();
 
@@ -69,9 +71,95 @@ export let targetTankName: string = "";
 
 export let loadedMap = false;
 
+export let mapNumber = -1;
+
 export let lastMoveTime = 0;
 
 export let banTankByName: string = "";
+
+export const listDefZone: Record<number, Array<Position>> = {
+  1: [
+    { x: 17, y: 7 },
+    { x: 24, y: 7 },
+    { x: 32, y: 14 },
+    { x: 32, y: 19 },
+    { x: 17, y: 26 },
+    { x: 24, y: 26 },
+    { x: 9, y: 14 },
+    { x: 9, y: 19 },
+  ],
+  2: [
+    {
+      x: 21,
+      y: 7,
+    },
+    {
+      x: 21,
+      y: 25,
+    },
+    {
+      x: 25,
+      y: 17,
+    },
+    {
+      x: 15,
+      y: 17,
+    },
+  ],
+  3: [
+    {
+      x: 20,
+      y: 7,
+    },
+    {
+      x: 20,
+      y: 25,
+    },
+    {
+      x: 34,
+      y: 23,
+    },
+    {
+      x: 7,
+      y: 23,
+    },
+    {
+      x: 34,
+      y: 10,
+    },
+    {
+      x: 7,
+      y: 10,
+    },
+  ],
+  4: [
+    {
+      x: 19,
+      y: 7,
+    },
+    {
+      x: 19,
+      y: 25,
+    },
+    {
+      x: 34,
+      y: 16,
+    },
+    {
+      x: 9,
+      y: 16,
+    },
+  ],
+  5: [
+    { x: 20, y: 11 },
+    { x: 20, y: 22 },
+    { x: 30, y: 15 },
+    {
+      x: 12,
+      y: 17,
+    },
+  ],
+};
 
 /*
   Priority:
@@ -95,6 +183,10 @@ export let road: {
   priority: MovePriority.CLEAR,
   data: [],
   index: -1,
+};
+
+export const clearLoadedMap = () => {
+  loadedMap = false;
 };
 
 export let startPromise = new Promise<boolean>(
@@ -327,6 +419,22 @@ export const saveMap = (map: MapMatch) => {
       }
     }
   }
+  let mapString = map.toString();
+  if (mapString === map1.toString()) {
+    mapNumber = 1;
+  }
+  if (mapString === map2.toString()) {
+    mapNumber = 2;
+  }
+  if (mapString === map3.toString()) {
+    mapNumber = 3;
+  }
+  if (mapString === map4.toString()) {
+    mapNumber = 4;
+  }
+  if (mapString === map5.toString()) {
+    mapNumber = 5;
+  }
   loadedMap = true;
 };
 
@@ -464,7 +572,8 @@ export const findTargetTankV2 = () => {
                 size: TankSize,
               }
             ))) &&
-        euclideanDistance(currentPosition, targetTankIndex) >= 3
+        euclideanDistance(currentPosition, targetTankIndex) >= 3 &&
+        euclideanDistance(currentPosition, targetTankIndex) <= 5
       ) {
         //finded
         result.unshift(currentPosition as never);
@@ -498,6 +607,101 @@ export const findTargetTankV2 = () => {
       ) {
         continue;
       }
+      if (
+        moveNextPosition.x < 1 ||
+        moveNextPosition.x > 43 ||
+        moveNextPosition.y < 1 ||
+        moveNextPosition.y > 33 ||
+        ["B", "T", "W"].includes(
+          mapMatch[moveNextPosition.y][moveNextPosition.x] as never
+        ) ||
+        ["B", "T", "W"].includes(
+          mapMatch[moveNextPosition.y][moveNextPosition.x + 1] as never
+        ) ||
+        ["B", "T", "W"].includes(
+          mapMatch[moveNextPosition.y + 1][moveNextPosition.x] as never
+        ) ||
+        ["B", "T", "W"].includes(
+          mapMatch[moveNextPosition.y + 1][moveNextPosition.x + 1] as never
+        )
+      ) {
+        continue;
+      }
+      if (!checked?.[moveNextPosition.y]?.[moveNextPosition.x]) {
+        if (!checked?.[moveNextPosition.y]) {
+          checked[moveNextPosition.y] = {};
+        }
+        checked[moveNextPosition.y][moveNextPosition.x] = {
+          x: currentPosition.x,
+          y: currentPosition.y,
+        };
+        queue.push(moveNextPosition);
+      }
+    }
+  }
+  return result;
+};
+
+export const findToDefZoneOnMap = (testZone?: Position) => {
+  if (!myTank || !myTank.x || !myTank.y || !listDefZone[mapNumber]) {
+    return [];
+  }
+  //TODO
+  const defZones = testZone
+    ? [testZone]
+    : [
+        listDefZone[mapNumber][
+          Math.floor(Math.random() * listDefZone[mapNumber].length)
+        ],
+      ] ?? [];
+  const myTankIndex = initPosition(
+    Math.floor(myTank.x / ObjectSize),
+    Math.floor(myTank.y / ObjectSize)
+  );
+  const result: Array<Position> = [];
+  const checked: any = {
+    [myTankIndex.y]: {
+      [myTankIndex.x]: null,
+    },
+  };
+  const queue: Array<Position> = [
+    {
+      x: myTankIndex.x,
+      y: myTankIndex.y,
+    },
+  ];
+  while (queue.length) {
+    const currentPosition = queue.shift();
+    if (!currentPosition) {
+      continue;
+    }
+    let finded = false;
+    for (const index in defZones) {
+      const zone = defZones[index];
+      if (zone.x === currentPosition.x && zone.y === currentPosition.y) {
+        //finded
+        result.unshift(currentPosition as never);
+        let position =
+          checked[currentPosition?.y ?? ""][currentPosition?.x ?? ""];
+        while (
+          position !== null &&
+          (position?.x !== myTankIndex.x || position?.y !== myTankIndex.y)
+        ) {
+          result.unshift(position as never);
+          position = checked[position?.y ?? ""][position?.x ?? ""];
+        }
+        finded = true;
+        break;
+      }
+    }
+    if (finded) {
+      break;
+    }
+    for (let dir of movePostionDirection) {
+      const moveNextPosition = initPosition(
+        currentPosition.x + dir.x,
+        currentPosition.y + dir.y
+      );
       if (
         moveNextPosition.x < 1 ||
         moveNextPosition.x > 43 ||

@@ -1,4 +1,4 @@
-export const mapTest = [
+export const map1 = [
     [
       "B",
       "B",

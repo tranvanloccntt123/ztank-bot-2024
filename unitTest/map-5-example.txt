@@ -1,0 +1,37 @@
+BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB 0
+B                     B                     B 1
+B                     B                     B 2
+B     WWWWWWWWWWW     B                     B 3
+B     WWWWWWWWWWW             TT   TT       B 4
+B             WWW            TBBT TBBT      B 5
+B            WWW            TBBBBTBBBBT     B 6
+B           WWW             TBBBBBBBBBT     B 7
+B          WWW              TBBBBBBBBBT     B 8
+B         WWW                TBBBBBBBT      B 9
+B        WWW                  TBBBBBT       B 10
+B       WWW                    TBBBT        B 11
+B      WWW                      TBT         B 12
+B     WWW                        T          B 13
+B     WWWWWWWWWWW                           B 14
+B     WWWWWWWWWWW     T                     B 15
+B                    TTT                    B 16
+BBBB                TTTTT                BBBB 17
+B                    TTT                    B 18
+B                     T     WWWWWWWWWWW     B 19
+B                           WWWWWWWWWWW     B 20
+B       TT   TT                     WWW     B 21
+B      TBBT TBBT                   WWW      B 22
+B     TBBBBTBBBBT                 WWW       B 23
+B     TBBBBBBBBBT                WWW        B 24
+B     TBBBBBBBBBT               WWW         B 25
+B      TBBBBBBBT               WWW          B 26
+B       TBBBBBT               WWW           B 27
+B        TBBBT               WWW            B 28
+B         TBT               WWW             B 29
+B          T                WWWWWWWWWWW     B 30
+B                     B     WWWWWWWWWWW     B 31
+B                     B                     B 32
+B                     B                     B 33
+BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB 34
+                                             
+012345678901234567890123456789012345678901234
