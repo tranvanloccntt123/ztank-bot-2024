@@ -480,8 +480,6 @@ export const checkBulletInsideBlock = (position: Position) => {
   );
 };
 
-export let roadMapX20: Array<Position> = [];
-
 const movePostionDirection = [
   { x: 1, y: 0 }, // Di chuyển theo x+
   { x: -1, y: 0 }, // Di chuyển theo x-

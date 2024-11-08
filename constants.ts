@@ -20,6 +20,8 @@ export const Events = {
 
 export const MY_NAME = "The Fool";
 
+// export const MY_NAME = "Pink1";
+
 export const SERVER_1: string = "https://zarena-dev1.zinza.com.vn";
 
 export const SERVER_2: string = "https://zarena-dev2.zinza.com.vn";
@@ -33,6 +35,8 @@ export const loginUser: string = "view";
 export const loginPassword: string = "4tRWMfxCfR";
 
 export const Token: string = "p9lcmt2v";
+
+// export const Token: string = "VVtgwUXB";
 
 export const ObjectSize: number = 20;
 
