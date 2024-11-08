@@ -187,6 +187,12 @@ export let road: {
 
 export const clearLoadedMap = () => {
   loadedMap = false;
+  blockPositionHorizontal = {};
+  blockPositionVertical = {};
+  blockPosition.clear();
+  objectPosition.clear();
+  objectPositionHorizontal = {};
+  objectPositionVertical = {};
 };
 
 export let startPromise = new Promise<boolean>(
@@ -645,17 +651,18 @@ export const findToDefZoneOnMap = (testZone?: Position) => {
     return [];
   }
   //TODO
-  const defZones = testZone
-    ? [testZone]
-    : [
-        listDefZone[mapNumber][
-          Math.floor(Math.random() * listDefZone[mapNumber].length)
-        ],
-      ] ?? [];
   const myTankIndex = initPosition(
     Math.floor(myTank.x / ObjectSize),
     Math.floor(myTank.y / ObjectSize)
   );
+
+  const defZones = testZone
+    ? [testZone]
+    : listDefZone[mapNumber].filter(
+        (position) =>
+          position.x !== myTankIndex.x && position.x !== myTankIndex.y
+      ) ?? [];
+
   const result: Array<Position> = [];
   const checked: any = {
     [myTankIndex.y]: {
@@ -1063,16 +1070,19 @@ export const findRoadOnListMapIndex = (
 
       const initMapIndex = mapIndexOnMapMatch(tankPosition);
 
-      // console.log("CURRENT MAP INDEX", initMapIndex);
+      // console.log(
+      //   "CURRENT MAP INDEX",
+      //   initMapIndex,
+      //   mapMatch[initMapIndex.startY][initMapIndex.startX]
+      // );
 
       const threadhold = 0.2;
 
       while (queue.length) {
         const tankPosition = queue.shift();
+        // console.log(tankPosition);
         if (tankPosition) {
           const mapIndex = mapIndexOnMapMatch(tankPosition);
-          // if (mapIndex.startX === 30 && mapIndex.startY === 9)
-          //   console.log(mapIndex, tankPosition);
           if (
             positions[listIndex].x === mapIndex.startX &&
             positions[listIndex].y === mapIndex.startY &&
@@ -1081,13 +1091,10 @@ export const findRoadOnListMapIndex = (
             tankPosition.y / ObjectSize >= positions[listIndex].y &&
             tankPosition.y / ObjectSize < positions[listIndex].y + threadhold
           ) {
-            // console.log("FINDED", mapIndex, tankPosition);
             listIndex++;
             findedTankPosition = tankPosition;
             queue = [];
             if (listIndex === positions.length) {
-              // console.log("BREAK", tankPosition);
-              // result.push(...revertRoad(findRoad, tankPosition as any));
               break;
             }
           }
@@ -1115,17 +1122,15 @@ export const findRoadOnListMapIndex = (
               _orients.push("UP");
               _unOrients.push("DOWN");
             }
-            // console.log(tankPosition);
-            // console.log(mapIndex, positions[listIndex]);
-            // console.log(_orients);
           }
-          // console.log(_orients, tankPosition, mapIndex, positions[listIndex]);
+          // console.log(_orients, mapIndex, positions[listIndex]);
           for (let i = 0; i < _orients.length; i++) {
             const orient = _orients[i];
             const moveNextPosition = tankPositionAtNextTime(
               tankPosition as never,
               orient as never
             );
+            // console.log(orient, moveNextPosition);
             if (
               !checkTankPositionIsObject(moveNextPosition as never) &&
               !(

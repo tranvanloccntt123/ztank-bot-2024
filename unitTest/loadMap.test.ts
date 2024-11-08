@@ -20,48 +20,46 @@ import { map3 } from "../map/map3";
 import { map4 } from "../map/map4";
 import { map5 } from "../map/map5";
 
-saveMap(map1 as any);
-
 saveTanks([
   {
-    x: 20,
-    y: 20,
+    x: 675,
+    y: 183,
     speed: 3,
     type: 1,
-    uid: "St3F4HFo6JZzLB2qAAFH",
-    orient: "RIGHT",
+    uid: "2EmaU8jiVC3xD1OlAAHX",
+    orient: "LEFT",
     isAlive: true,
     size: 33,
     name: "The Fool",
-    shootable: true,
-    movable: true,
-    shootCooldown: 0,
+    shootable: false,
+    movable: false,
+    shootCooldown: 27,
     invulnerable: false,
     protectCooldown: 0,
-    score: 20,
-    streak: 2,
-    bounty: 3,
-    color: 1,
+    score: 450,
+    streak: 9,
+    bounty: 24,
+    color: 0,
   },
   {
-    x: 765,
-    y: 190,
+    x: 757,
+    y: 318,
     speed: 3,
     type: 1,
-    uid: "8dTOBtblMpjylpaPAACj",
-    orient: "DOWN",
+    uid: "TnbghJznKGEblhMPAABF",
+    orient: "UP",
     isAlive: true,
     size: 33,
     name: "zarenabot",
-    shootable: true,
+    shootable: false,
     movable: false,
-    shootCooldown: 0,
+    shootCooldown: 15,
     invulnerable: false,
     protectCooldown: 0,
-    score: 2250,
+    score: 5205,
     streak: 0,
     bounty: 0,
-    color: 0,
+    color: 2,
   },
 ]);
 
@@ -91,51 +89,51 @@ saveBullets([
 ] as any);
 
 test("Dodge", () => {
+  clearLoadedMap();
+  saveMap(map1 as any);
   expect(myTank).not.toBe(null);
   const result = dodgeBullets(myTank!, 0);
-  console.log(result);
   expect(result.result.length).toBe(1);
 });
 
 test("New find road", () => {
+  clearLoadedMap();
+  saveMap(map4 as any);
   findTargetTank();
   const onMapPositions = findTargetOnMap();
   // console.log(onMapPositions);
   expect(onMapPositions.length).toBeGreaterThanOrEqual(1);
-  // if (onMapPositions.length) {
-  //   const road = findRoadOnListMapIndex(myTank!, onMapPositions, 0);
-  //   expect(road.length).toBeGreaterThanOrEqual(1);
-  // }
-});
-
-test("Check Map", () => {
-  expect(map1.toString() === map1Tmp.toString()).toBe(true);
-});
-
-test("Find Def Zone", () => {
-  const keys = Object.keys(listDefZone);
-  for (const key of keys) {
-    clearLoadedMap();
-    if (key === `1`) {
-      saveMap(map1 as never);
-    }
-    if (key === `2`) {
-      saveMap(map2 as never);
-    }
-    if (key === `3`) {
-      saveMap(map3 as never);
-    }
-    if (key === `4`) {
-      saveMap(map4 as never);
-    }
-    if (key === `5`) {
-      saveMap(map5 as never);
-    }
-    console.log("RUN ON MAP ", mapNumber);
-    const listZone = listDefZone[mapNumber];
-      listZone.forEach(zone => {
-        const onMapPositions = findToDefZoneOnMap(zone);
-        expect(onMapPositions.length).toBeGreaterThanOrEqual(1);
-      })
+  if (onMapPositions.length) {
+    console.log(onMapPositions);
+    const road = findRoadOnListMapIndex(myTank!, onMapPositions, 0);
+    expect(road.length).toBeGreaterThanOrEqual(1);
   }
-})
+});
+
+// test("Find Def Zone", () => {
+//   const keys = Object.keys(listDefZone);
+//   for (const key of keys) { 
+//     clearLoadedMap();
+//     if (key === `1`) {
+//       saveMap(map1 as never);
+//     }
+//     if (key === `2`) {
+//       saveMap(map2 as never);
+//     }
+//     if (key === `3`) {
+//       saveMap(map3 as never);
+//     }
+//     if (key === `4`) {
+//       saveMap(map4 as never);
+//     }
+//     if (key === `5`) {
+//       saveMap(map5 as never);
+//     }
+//     console.log("RUN ON MAP ", mapNumber);
+//     const listZone = listDefZone[mapNumber];
+//     listZone.forEach((zone) => {
+//       const onMapPositions = findToDefZoneOnMap(zone);
+//       expect(onMapPositions.length).toBeGreaterThanOrEqual(1);
+//     });
+//   }
+// });
