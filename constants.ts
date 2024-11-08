@@ -54,7 +54,7 @@ export const BulletTimeSpeed: number = 17; //ms
 
 export const BulletSize = 8;
 
-export const ShootAbleTime = 1020;
+export const ShootAbleTime = 1015;
 
 export const ShootAreaSize = 20;
 
