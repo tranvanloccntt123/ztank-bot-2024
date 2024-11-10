@@ -51,7 +51,9 @@ const init = async () => {
         if (
           myTank &&
           road.priority !== MovePriority.DODGE &&
-          orient !== "SHOOT"
+          road.priority !== MovePriority.SHOOT &&
+          orient !== "SHOOT" &&
+          orient !== "PAUSE"
         ) {
           const nextPosition = tankAtNextTime(myTank, orient);
           for (const bullet of Array.from(bullets.values())) {
@@ -82,24 +84,27 @@ const init = async () => {
           }
         }
         if (orient === "SHOOT") {
-          if (canMoveNextPosition) {
-            await sleep(1);
-          }
+          // if (canMoveNextPosition) {
+          //   await sleep(1);
+          // }
           shoot();
           road.index = road.index + 1;
         }
 
         if (canMoveNextPosition) {
-          if (orient !== "SHOOT") {
+          if (orient !== "SHOOT" && orient !== "PAUSE") {
             moveTank(orient);
             road.index = road.index + 1;
             await movePromise;
+          }
+          if (orient === "PAUSE") {
+            await sleep(2);
           }
         } else {
           clearRoad();
         }
 
-        if (road.index === road.data.length) {
+        if (road.index >= road.data.length) {
           clearRoad();
         }
       } else {

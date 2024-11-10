@@ -11,8 +11,6 @@ import {
   bullets,
   dodgeBullets,
   findRoadOnListMapIndex,
-  findTargetOnMap,
-  findTargetTank,
   findTargetTankV2,
   findToBlockNearest,
   findToDefZoneOnMap,
@@ -31,10 +29,115 @@ import {
 import {
   bulletPositionAtRunTime,
   euclideanDistance,
+  isSameHorizontalAxisWithSize,
+  isSameVerticalAxisWithSize,
   otherTankInsideHorizontal,
   otherTankInsideVertical,
 } from "./utils";
 import { shoot } from "./connect";
+
+const checkShootVertical = (tank: Tank) => {
+  if (
+    !myTank ||
+    tank.name === MY_NAME ||
+    isReborn.has(tank.name) ||
+    !isShootAble
+  ) {
+    return;
+  }
+  if (isSameVerticalAxisWithSize(myTank, tank)) {
+    if (otherTankInsideVertical(tank)) {
+      if (
+        !hasBlockBetweenObjects(
+          {
+            x: myTank.x + (TankSize / 2 - BulletSize / 2) - 2,
+            y: myTank.y,
+            size: BulletSize,
+          },
+          {
+            x: myTank.x + (TankSize / 2 - BulletSize / 2) - 2,
+            y: tank.y,
+            size: BulletSize,
+          }
+        )
+      ) {
+        if (myTank?.orient === "UP" && tank.y < (myTank?.y ?? 0)) {
+          // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
+          if (euclideanDistance(tank, myTank) <= TankSize * 4) {
+            shoot();
+            return true;
+          }
+        } else if (myTank?.orient === "DOWN" && tank.y > (myTank?.y ?? 0)) {
+          // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
+          if (euclideanDistance(tank, myTank) <= TankSize * 4) {
+            shoot();
+            return true;
+          }
+        } else {
+          if (tank.y < (myTank?.y ?? 0)) {
+            saveRoad(MovePriority.SHOOT, ["UP", "SHOOT"]);
+          } else {
+            saveRoad(MovePriority.SHOOT, ["DOWN", "SHOOT"]);
+          }
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+};
+
+const checkShootHorizontal = (tank: Tank) => {
+  if (
+    !myTank ||
+    tank.name === MY_NAME ||
+    isReborn.has(tank.name) ||
+    !isShootAble
+  ) {
+    return;
+  }
+  if (isSameHorizontalAxisWithSize(myTank, tank)) {
+    if (otherTankInsideHorizontal(tank)) {
+      if (
+        !hasBlockBetweenObjects(
+          {
+            x: myTank.x,
+            y: myTank.y + (TankSize / 2 - BulletSize / 2) - 2,
+            size: BulletSize,
+          },
+          {
+            x: tank.x,
+            y: myTank.y + (TankSize / 2 - BulletSize / 2) - 2,
+            size: BulletSize,
+          }
+        )
+      ) {
+        if (myTank?.orient === "LEFT" && tank.x < (myTank?.x ?? 0)) {
+          // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
+          if (euclideanDistance(tank, myTank) <= TankSize * 5) {
+            shoot();
+            return true;
+          }
+        } else if (myTank?.orient === "RIGHT" && tank.x > (myTank?.x ?? 0)) {
+          // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
+          if (euclideanDistance(tank, myTank) <= TankSize * 5) {
+            shoot();
+            return true;
+          }
+        } else {
+          if (tank.x < (myTank?.x ?? 0)) {
+            saveRoad(MovePriority.SHOOT, ["LEFT", "SHOOT"]);
+          } else {
+            saveRoad(MovePriority.SHOOT, ["RIGHT", "SHOOT"]);
+          }
+          return true;
+        }
+      }
+    } else {
+    }
+  }
+  return false;
+};
 
 export const startTrickShootSystem = async () => {
   await startPromise;
@@ -46,107 +149,21 @@ export const startTrickShootSystem = async () => {
         myTank.x &&
         myTank.y
       ) {
-        Array.from(tanks.values())
-          .sort((a, b) => {
-            const aPosition = euclideanDistance(
-              { x: a.x, y: a.y },
-              { x: myTank!.x, y: myTank!.y }
-            );
-            const bPosition = euclideanDistance(
-              { x: b.x, y: b.y },
-              { x: myTank!.x, y: myTank!.y }
-            );
-            return aPosition - bPosition;
-          })
-          .forEach((tank) => {
-            if (
-              !myTank?.x ||
-              !myTank?.y ||
-              tank.name === MY_NAME ||
-              isReborn.has(tank.name) ||
-              !(myTank?.shootable || isShootAble)
-            ) {
-              return;
-            }
-            //Vertical
-            if (otherTankInsideVertical(tank)) {
-              if (
-                !hasBlockBetweenObjects(
-                  {
-                    x: myTank.x + (TankSize / 2 - BulletSize / 2) - 2,
-                    y: myTank.y,
-                    size: BulletSize,
-                  },
-                  {
-                    x: myTank.x + (TankSize / 2 - BulletSize / 2) - 2,
-                    y: tank.y,
-                    size: BulletSize,
-                  }
-                )
-              ) {
-                if (myTank?.orient === "UP" && tank.y < (myTank?.y ?? 0)) {
-                  // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
-                  if (euclideanDistance(tank, myTank) <= TankSize * 4) {
-                    shoot();
-                  }
-                } else if (
-                  myTank?.orient === "DOWN" &&
-                  tank.y > (myTank?.y ?? 0)
-                ) {
-                  // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
-                  if (euclideanDistance(tank, myTank) <= TankSize * 2.5) {
-                    shoot();
-                  }
-                } else {
-                  if (tank.y < (myTank?.y ?? 0)) {
-                    saveRoad(MovePriority.SHOOT, ["UP", "SHOOT"]);
-                  } else {
-                    saveRoad(MovePriority.SHOOT, ["DOWN", "SHOOT"]);
-                  }
-                }
-                return;
-              }
-            }
-            //Horizontal
-            if (otherTankInsideHorizontal(tank)) {
-              if (
-                !hasBlockBetweenObjects(
-                  {
-                    x: myTank.x,
-                    y: myTank.y + (TankSize / 2 - BulletSize / 2) - 2,
-                    size: BulletSize,
-                  },
-                  {
-                    x: tank.x,
-                    y: myTank.y + (TankSize / 2 - BulletSize / 2) - 2,
-                    size: BulletSize,
-                  }
-                )
-              ) {
-                if (myTank?.orient === "LEFT" && tank.x < (myTank?.x ?? 0)) {
-                  // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
-                  if (euclideanDistance(tank, myTank) <= TankSize * 2.5) {
-                    shoot();
-                  }
-                } else if (
-                  myTank?.orient === "RIGHT" &&
-                  tank.x > (myTank?.x ?? 0)
-                ) {
-                  // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
-                  if (euclideanDistance(tank, myTank) <= TankSize * 2.5) {
-                    shoot();
-                  }
-                } else {
-                  if (tank.x < (myTank?.x ?? 0)) {
-                    saveRoad(MovePriority.SHOOT, ["LEFT", "SHOOT"]);
-                  } else {
-                    saveRoad(MovePriority.SHOOT, ["RIGHT", "SHOOT"]);
-                  }
-                }
-                return;
-              }
-            }
-          });
+        for (const tank of Array.from(tanks.values()).sort((a, b) => {
+          const aPosition = euclideanDistance(
+            { x: a.x, y: a.y },
+            { x: myTank!.x, y: myTank!.y }
+          );
+          const bPosition = euclideanDistance(
+            { x: b.x, y: b.y },
+            { x: myTank!.x, y: myTank!.y }
+          );
+          return aPosition - bPosition;
+        })) {
+          if (checkShootVertical(tank) || checkShootHorizontal(tank)) {
+            return;
+          }
+        }
       }
     } catch (e) {
       console.log(e);
@@ -224,7 +241,11 @@ export const startDodgeRoadSystem = async () => {
   await startPromise;
   setInterval(() => {
     try {
-      if (myTank && !isReborn.has(myTank.name)) {
+      if (
+        myTank &&
+        !isReborn.has(myTank.name) &&
+        road.priority > MovePriority.DODGE
+      ) {
         if (bullets.size) {
           const _dodge = dodgeBullets(myTank, 0);
           if (!_dodge.isSafe && _dodge.result.length >= 1) {
@@ -262,20 +283,46 @@ export const findTargetSystem = async () => {
       ) {
         if (isShootAble || myTank.shootable) {
           const findLine = findTargetTankV2();
+          const isSmallList = findLine.length > 4;
           const _road = findRoadOnListMapIndex(
             myTank!,
-            findLine.length > 4 ? findLine.slice(0, 3) : findLine,
+            isSmallList ? findLine.slice(0, 3) : findLine,
             0
           );
           if (_road.length >= 1) {
-            saveRoad(
-              MovePriority.NORMAL,
-              _road.map((v) => v.orient)
-            );
+            const list = _road.map((v) => v.orient);
+            if (!isSmallList) {
+              const target = tanks.get(targetTankName);
+              const lastPosition = _.last(_road);
+              if (
+                isSameHorizontalAxisWithSize(
+                  { ...lastPosition, size: TankSize },
+                  target!
+                )
+              ) {
+                if (lastPosition.x < target!.x) {
+                  list.push("RIGHT");
+                } else {
+                  list.push("LEFT");
+                }
+              } else if (
+                isSameVerticalAxisWithSize(
+                  { ...lastPosition, size: TankSize },
+                  target!
+                )
+              ) {
+                if (lastPosition.y < target!.y) {
+                  list.push("DOWN");
+                } else {
+                  list.push("UP");
+                }
+              }
+            }
+            saveRoad(MovePriority.NORMAL, list);
             return;
           }
         }
-        if (road.priority > MovePriority.RANDOM_BLOCK) {
+        if (targetTankName !== "") {
           const _roadToDefArea = findToDefZoneOnMap();
           if (_roadToDefArea.length >= 1) {
             const findLineToDefArea = findRoadOnListMapIndex(
@@ -285,21 +332,11 @@ export const findTargetSystem = async () => {
             );
             if (findLineToDefArea.length > 1) {
               saveRoad(
-                MovePriority.RANDOM_BLOCK,
+                MovePriority.NORMAL,
                 findLineToDefArea.map((v) => v.orient)
               );
               return;
             }
-          }
-          const _roadToBlock = findToBlockNearest(
-            { x: myTank.x, y: myTank.y, orient: myTank.orient },
-            0
-          );
-          if (_roadToBlock.length > 1) {
-            saveRoad(
-              MovePriority.RANDOM_BLOCK,
-              _roadToBlock.slice(1).map((v) => v.orient)
-            );
           }
         }
       }

@@ -75,6 +75,7 @@ export const shoot = () => {
 export const moveTank = (orient: Orient) => {
   resetMovePromise();
   saveIsMoveAble(false);
+  saveLastMoveTime(new Date().getTime());
   setTimeout(() => {
     resolveMovePromise(true);
     saveIsMoveAble(true);
@@ -108,9 +109,6 @@ socket.on(Events.Reborn, (data: Tank) => {
 });
 
 socket.on(Events.Move, (data: Tank) => {
-  if (data.name === MY_NAME && (data.x !== myTank?.x || data.y !== myTank?.y)) {
-    saveLastMoveTime(new Date().getTime());
-  }
   saveTanks([data]);
 });
 

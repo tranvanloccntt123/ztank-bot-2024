@@ -2,6 +2,7 @@ import {
   BulletSize,
   MY_NAME,
   ObjectSize,
+  TankOnObjectPercent,
   TankSize,
   TankTimeSpeed,
 } from "./constants";
@@ -17,6 +18,8 @@ import {
   checkFullTankNearestBlock,
   checkTankOverlap,
   mapIndexOnMapMatch,
+  otherTankInsideHorizontal,
+  otherTankInsideVertical,
 } from "./utils";
 import * as _ from "lodash";
 import { map1 } from "./map/map1";
@@ -77,6 +80,25 @@ export let lastMoveTime = 0;
 
 export let banTankByName: string = "";
 
+export const listDefZoneV2: Record<
+  number,
+  Record<number, Record<number, boolean>>
+> = {
+  1: {},
+  2: {},
+  3: {},
+  4: {
+    3: { 6: true, 16: true, 37: true },
+    6: { 3: true, 9: true, 34: true, 40: true },
+    9: { 6: true, 37: true },
+    24: { 6: true, 37: true },
+    26: { 16: true },
+    27: { 3: true, 9: true, 34: true, 40: true },
+    30: { 6: true, 26: true, 37: true },
+  },
+  5: {},
+};
+
 export const listDefZone: Record<number, Array<Position>> = {
   1: [
     { x: 17, y: 7 },
@@ -134,20 +156,89 @@ export const listDefZone: Record<number, Array<Position>> = {
   ],
   4: [
     {
-      x: 19,
-      y: 7,
-    },
-    {
-      x: 19,
-      y: 25,
-    },
-    {
-      x: 34,
-      y: 16,
+      x: 6,
+      y: 3,
     },
     {
       x: 9,
-      y: 16,
+      y: 6,
+    },
+    {
+      x: 6,
+      y: 9,
+    },
+    {
+      x: 3,
+      y: 6,
+    },
+    //
+    {
+      x: 16,
+      y: 3,
+    },
+    {
+      x: 26,
+      y: 7,
+    },
+    //
+    {
+      x: 37,
+      y: 3,
+    },
+    {
+      x: 40,
+      y: 6,
+    },
+    {
+      x: 37,
+      y: 9,
+    },
+    {
+      x: 34,
+      y: 6,
+    },
+    //
+    {
+      x: 37,
+      y: 24,
+    },
+    {
+      x: 40,
+      y: 27,
+    },
+    {
+      x: 37,
+      y: 30,
+    },
+    {
+      x: 34,
+      y: 27,
+    },
+    //
+    {
+      x: 16,
+      y: 26,
+    },
+    {
+      x: 26,
+      y: 30,
+    },
+    //
+    {
+      x: 6,
+      y: 24,
+    },
+    {
+      x: 9,
+      y: 27,
+    },
+    {
+      x: 6,
+      y: 30,
+    },
+    {
+      x: 3,
+      y: 27,
     },
   ],
   5: [
@@ -170,14 +261,15 @@ export const listDefZone: Record<number, Array<Position>> = {
 export const MovePriority = {
   DODGE: 0,
   SHOOT: 1,
-  NORMAL: 2,
-  RANDOM_BLOCK: 3,
+  PAUSE: 2,
+  NORMAL: 3,
+  RANDOM_BLOCK: 4,
   CLEAR: 9999,
 };
 
 export let road: {
   priority: number;
-  data: Array<Orient | "SHOOT">;
+  data: Array<Orient | "SHOOT" | "PAUSE">;
   index: number;
 } = {
   priority: MovePriority.CLEAR,
@@ -269,7 +361,10 @@ export const saveTargetTankName = (name: string) => {
   targetTankName = name;
 };
 
-export const saveRoad = (priority: number, data: Array<Orient | "SHOOT">) => {
+export const saveRoad = (
+  priority: number,
+  data: Array<Orient | "SHOOT" | "PAUSE">
+) => {
   try {
     if (data.length) {
       if (priority < road.priority) {
@@ -506,19 +601,19 @@ const checkTankSafe = (
         !hasBlockBetweenObjects(current, target, false)) ||
       (target.y === current.y && !hasBlockBetweenObjects(current, target))
     ) {
-      if (target.orient === "UP" && current.y < target.y) {
-        return false;
-      }
-      if (target.orient === "DOWN" && current.y > target.y) {
-        return false;
-      }
-      if (target.orient === "LEFT" && current.x < target.x) {
-        return false;
-      }
-      if (target.orient === "RIGHT" && current.x > target.x) {
-        return false;
-      }
-      
+      // if (target.orient === "UP" && current.y < target.y) {
+      //   return false;
+      // }
+      // if (target.orient === "DOWN" && current.y > target.y) {
+      //   return false;
+      // }
+      // if (target.orient === "LEFT" && current.x < target.x) {
+      //   return false;
+      // }
+      // if (target.orient === "RIGHT" && current.x > target.x) {
+      //   return false;
+      // }
+
       return true;
     }
   }
@@ -573,20 +668,34 @@ export const findTargetTankV2 = () => {
     for (const index in tankMapIndex) {
       const targetTankIndex = tankMapIndex[index];
       if (
-        checkTankSafe(
-          {
-            x: currentPosition.x * ObjectSize,
-            y: currentPosition.y * ObjectSize,
-            size: TankSize,
-            orient: "DOWN",
-          },
-          {
-            x: targetTankIndex.x * ObjectSize,
-            y: targetTankIndex.y * ObjectSize,
-            size: TankSize,
-            orient: tankOrient[index],
-          }
-        )
+        ((targetTankIndex.x === currentPosition.x &&
+          !hasBlockBetweenObjects(
+            {
+              x: currentPosition.x * ObjectSize,
+              y: currentPosition.y * ObjectSize,
+              size: TankSize,
+            },
+            {
+              x: targetTankIndex.x * ObjectSize,
+              y: targetTankIndex.y * ObjectSize,
+              size: TankSize,
+            },
+            false
+          )) ||
+          (targetTankIndex.y === currentPosition.y &&
+            !hasBlockBetweenObjects(
+              {
+                x: currentPosition.x * ObjectSize,
+                y: currentPosition.y * ObjectSize,
+                size: TankSize,
+              },
+              {
+                x: targetTankIndex.x * ObjectSize,
+                y: targetTankIndex.y * ObjectSize,
+                size: TankSize,
+              }
+            ))) &&
+        euclideanDistance(currentPosition, targetTankIndex) <= 5
       ) {
         //finded
         result.unshift(currentPosition as never);
@@ -647,7 +756,7 @@ export const findTargetTankV2 = () => {
   return result;
 };
 
-export const findToDefZoneOnMap = (testZone?: Position) => {
+export const findToDefZoneOnMap = (testZone?: any) => {
   if (!myTank || !myTank.x || !myTank.y || !listDefZone[mapNumber]) {
     return [];
   }
@@ -657,12 +766,7 @@ export const findToDefZoneOnMap = (testZone?: Position) => {
     Math.floor(myTank.y / ObjectSize)
   );
 
-  const defZones = testZone
-    ? [testZone]
-    : listDefZone[mapNumber].filter(
-        (position) =>
-          position.x !== myTankIndex.x && position.x !== myTankIndex.y
-      ) ?? [];
+  const defZones = listDefZoneV2[mapNumber] ?? {};
 
   const result: Array<Position> = [];
   const checked: any = {
@@ -682,23 +786,40 @@ export const findToDefZoneOnMap = (testZone?: Position) => {
       continue;
     }
     let finded = false;
-    for (const index in defZones) {
-      const zone = defZones[index];
-      if (zone.x === currentPosition.x && zone.y === currentPosition.y) {
-        //finded
-        result.unshift(currentPosition as never);
-        let position =
-          checked[currentPosition?.y ?? ""][currentPosition?.x ?? ""];
-        while (
-          position !== null &&
-          (position?.x !== myTankIndex.x || position?.y !== myTankIndex.y)
-        ) {
-          result.unshift(position as never);
-          position = checked[position?.y ?? ""][position?.x ?? ""];
+    if (
+      defZones[currentPosition.y]?.[currentPosition.x] &&
+      !_.inRange(currentPosition.x, myTankIndex.x - 1, myTankIndex.x + 2) &&
+      !_.inRange(currentPosition.y, myTankIndex.y - 1, myTankIndex.y + 2)
+    ) {
+      let checkTankInside: boolean = false;
+      tanks.forEach((tank) => {
+        if (tank.name === MY_NAME || !!checkTankInside) {
+          return;
         }
-        finded = true;
+        const mapIndex = mapIndexOnMapMatch(tank, TankOnObjectPercent);
+        if (
+          _.inRange(currentPosition.x, mapIndex.startX, mapIndex.endX + 1) ||
+          _.inRange(currentPosition.y, mapIndex.startY, mapIndex.endY + 1)
+        ) {
+          checkTankInside = true;
+        }
+      });
+      if (checkTankInside) {
         break;
       }
+      //finded
+      result.unshift(currentPosition as never);
+      let position =
+        checked[currentPosition?.y ?? ""][currentPosition?.x ?? ""];
+      while (
+        position !== null &&
+        (position?.x !== myTankIndex.x || position?.y !== myTankIndex.y)
+      ) {
+        result.unshift(position as never);
+        position = checked[position?.y ?? ""][position?.x ?? ""];
+      }
+      finded = true;
+      break;
     }
     if (finded) {
       break;
@@ -1056,6 +1177,13 @@ export const findRoadOnListMapIndex = (
       let listIndex = 0;
 
       const initMapIndex = mapIndexOnMapMatch(tankPosition);
+      if (
+        positions.length === 1 &&
+        initMapIndex.startX === positions[0].x &&
+        initMapIndex.startY === positions[0].y
+      ) {
+        return result;
+      }
 
       // console.log(
       //   "CURRENT MAP INDEX",
@@ -1246,14 +1374,9 @@ export const dodgeBullets = (
   const result: Array<any> = [];
   const _bullets = Array.from(bullets.values());
   while (queue.length) {
-    const _tankPosition = queue.shift();
+    let _tankPosition = queue.shift();
     if (
-      safeArea(
-        _tankPosition as never,
-        _bullets,
-        tanks,
-        _tankPosition?.ms as never
-      )
+      safeArea(_tankPosition as never, _bullets, _tankPosition?.ms as never)
     ) {
       //REVERT POSITION
       result.push(...revertRoad(dodgeRoad, _tankPosition as any));

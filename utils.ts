@@ -527,56 +527,62 @@ export const bulletInsideTankVertical = (
   );
 };
 
-export const otherTankInsideVertical = (tank: Position) => {
-  if (!myTank || !myTank.x || !myTank.y) {
+export const otherTankInsideVertical = (
+  tank: Position,
+  currentPosition: Position | null = myTank
+) => {
+  if (!currentPosition || !currentPosition.x || !currentPosition.y) {
     return false;
   }
   return (
     _.inRange(
       tank?.x ?? 0,
-      myTank.x + (TankSize / 2 - BulletSize / 2),
-      myTank.x + TankSize - (TankSize / 2 - BulletSize / 2)
+      currentPosition.x + (TankSize / 2 - BulletSize / 2),
+      currentPosition.x + TankSize - (TankSize / 2 - BulletSize / 2)
     ) ||
     _.inRange(
       (tank?.x ?? 0) + TankSize,
-      myTank.x + (TankSize / 2 - BulletSize / 2),
-      myTank.x + TankSize - (TankSize / 2 - BulletSize / 2)
+      currentPosition.x + (TankSize / 2 - BulletSize / 2),
+      currentPosition.x + TankSize - (TankSize / 2 - BulletSize / 2)
     ) ||
     _.inRange(
-      myTank.x + (TankSize / 2 - BulletSize / 2),
+      currentPosition.x + (TankSize / 2 - BulletSize / 2),
       tank.x,
       tank.x + TankSize
     ) ||
     _.inRange(
-      myTank.x + (TankSize / 2 - BulletSize / 2) + BulletSize,
+      currentPosition.x + (TankSize / 2 - BulletSize / 2) + BulletSize,
       tank.x,
       tank.x + TankSize
     )
   );
 };
 
-export const otherTankInsideHorizontal = (tank: Position) => {
-  if (!myTank || !myTank.x || !myTank.y) {
+export const otherTankInsideHorizontal = (
+  tank: Position,
+  currentPosition: Position | null = myTank
+) => {
+  if (!currentPosition || !currentPosition.x || !currentPosition.y) {
     return false;
   }
   return (
     _.inRange(
       tank?.y ?? 0,
-      myTank.y + (TankSize / 2 - BulletSize / 2),
-      myTank.y + TankSize - (TankSize / 2 - BulletSize / 2)
+      currentPosition.y + (TankSize / 2 - BulletSize / 2),
+      currentPosition.y + TankSize - (TankSize / 2 - BulletSize / 2)
     ) ||
     _.inRange(
       (tank?.y ?? 0) + TankSize,
-      myTank.y + (TankSize / 2 - BulletSize / 2),
-      myTank.y + TankSize - (TankSize / 2 - BulletSize / 2)
+      currentPosition.y + (TankSize / 2 - BulletSize / 2),
+      currentPosition.y + TankSize - (TankSize / 2 - BulletSize / 2)
     ) ||
     _.inRange(
-      myTank.y + (TankSize / 2 - BulletSize / 2),
+      currentPosition.y + (TankSize / 2 - BulletSize / 2),
       tank.y,
       tank.y + TankSize
     ) ||
     _.inRange(
-      myTank.y + (TankSize / 2 - BulletSize / 2) + BulletSize,
+      currentPosition.y + (TankSize / 2 - BulletSize / 2) + BulletSize,
       tank.y,
       tank.y + TankSize
     )
@@ -653,7 +659,6 @@ export const checkBulletRunningToTank = (
 export const safeArea = (
   tankPosition: Position,
   bullets: Array<Bullet>,
-  tanks: Map<string, Tank>,
   ms: number
 ) => {
   for (const bullet of bullets) {
@@ -667,35 +672,7 @@ export const safeArea = (
       return false;
     }
   }
-  let checkTank = true;
-  tanks.forEach((tank) => {
-    if (
-      tank.name !== MY_NAME &&
-      euclideanDistance(tank, tankPosition) < TankSize * 3 &&
-      isReborn.has(tank.name)
-    ) {
-      if (
-        isSameVerticalAxisWithSize(tank, { ...tankPosition, size: TankSize })
-      ) {
-        if (tank.orient === "DOWN" && tank.y < tankPosition.y) {
-          checkTank = false;
-        }
-        if (tank.orient === "UP" && tank.y > tankPosition.y) {
-          checkTank = false;
-        }
-      } else if (
-        isSameHorizontalAxisWithSize(tank, { ...tankPosition, size: TankSize })
-      ) {
-        if (tank.orient === "LEFT" && tank.x > tankPosition.x) {
-          checkTank = false;
-        }
-        if (tank.orient === "RIGHT" && tank.x < tankPosition.x) {
-          checkTank = false;
-        }
-      }
-    }
-  });
-  return checkTank;
+  return true;
 };
 
 export const checkBulletsInsideTank = (
