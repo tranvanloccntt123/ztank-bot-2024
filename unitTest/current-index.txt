@@ -1,0 +1,4 @@
+[SX - 1, SY - 1][SX, SY - 1][EX, SY - 1][EX + 1, SY - 1]
+[SX - 1, SY]    [SX, SY]    [EX, SY]    [EX + 1, SY]
+[SX - 1, EY]    [SX, EY]    [EX,EY]     [EX + 1, EY]
+[SX - 1, EY + 1][SX, EY + 1][EX, EY + 1][EX + 1, EY + 1]

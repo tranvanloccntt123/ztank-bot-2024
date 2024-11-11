@@ -51,7 +51,7 @@ const init = async () => {
         if (
           myTank &&
           road.priority !== MovePriority.DODGE &&
-          road.priority !== MovePriority.SHOOT &&
+          // road.priority !== MovePriority.SHOOT &&
           orient !== "SHOOT" &&
           orient !== "PAUSE"
         ) {

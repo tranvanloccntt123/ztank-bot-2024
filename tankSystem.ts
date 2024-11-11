@@ -46,39 +46,37 @@ const checkShootVertical = (tank: Tank) => {
   ) {
     return false;
   }
-  if (isSameVerticalAxisWithSize(myTank, tank)) {
-    if (otherTankInsideVertical(tank)) {
-      if (
-        !hasBlockBetweenObjects(
-          {
-            x: myTank.x + (TankSize / 2 - BulletSize / 2) - 2,
-            y: myTank.y,
-            size: BulletSize,
-          },
-          {
-            x: myTank.x + (TankSize / 2 - BulletSize / 2) - 2,
-            y: tank.y,
-            size: BulletSize,
-          }
-        ) &&
-        euclideanDistance(tank, myTank) <= TankSize * 4
-      ) {
-        if (myTank?.orient === "UP" && tank.y < (myTank?.y ?? 0)) {
-          // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
-          shoot();
-          return true;
-        } else if (myTank?.orient === "DOWN" && tank.y > (myTank?.y ?? 0)) {
-          // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
-          shoot();
-          return true;
-        } else {
-          if (tank.y < (myTank?.y ?? 0)) {
-            saveRoad(MovePriority.SHOOT, ["UP", "SHOOT"]);
-          } else {
-            saveRoad(MovePriority.SHOOT, ["DOWN", "SHOOT"]);
-          }
-          return true;
+  if (otherTankInsideVertical(tank)) {
+    if (
+      !hasBlockBetweenObjects(
+        {
+          x: myTank.x + (TankSize / 2 - BulletSize / 2),
+          y: myTank.y,
+          size: BulletSize,
+        },
+        {
+          x: myTank.x + (TankSize / 2 - BulletSize / 2),
+          y: tank.y,
+          size: BulletSize,
         }
+      ) &&
+      euclideanDistance(tank, myTank) <= TankSize * 4
+    ) {
+      if (myTank?.orient === "UP" && tank.y < (myTank?.y ?? 0)) {
+        // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
+        shoot();
+        return true;
+      } else if (myTank?.orient === "DOWN" && tank.y > (myTank?.y ?? 0)) {
+        // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
+        shoot();
+        return true;
+      } else {
+        if (tank.y < (myTank?.y ?? 0)) {
+          saveRoad(MovePriority.SHOOT, ["UP", "SHOOT"]);
+        } else {
+          saveRoad(MovePriority.SHOOT, ["DOWN", "SHOOT"]);
+        }
+        return true;
       }
     }
   }
@@ -94,42 +92,40 @@ const checkShootHorizontal = (tank: Tank) => {
   ) {
     return false;
   }
-  if (isSameHorizontalAxisWithSize(myTank, tank)) {
-    if (otherTankInsideHorizontal(tank)) {
-      if (
-        !hasBlockBetweenObjects(
-          {
-            x: myTank.x,
-            y: myTank.y + (TankSize / 2 - BulletSize / 2) - 2,
-            size: BulletSize,
-          },
-          {
-            x: tank.x,
-            y: myTank.y + (TankSize / 2 - BulletSize / 2) - 2,
-            size: BulletSize,
-          }
-        ) &&
-        euclideanDistance(tank, myTank) <= TankSize * 4
-      ) {
-        if (myTank?.orient === "LEFT" && tank.x < (myTank?.x ?? 0)) {
-          // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
-          shoot();
-          return true;
-        } else if (myTank?.orient === "RIGHT" && tank.x > (myTank?.x ?? 0)) {
-          // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
-          shoot();
-          return true;
-        } else {
-          if (tank.x < (myTank?.x ?? 0)) {
-            saveRoad(MovePriority.SHOOT, ["LEFT", "SHOOT"]);
-          } else {
-            saveRoad(MovePriority.SHOOT, ["RIGHT", "SHOOT"]);
-          }
-          return true;
+  if (otherTankInsideHorizontal(tank)) {
+    if (
+      !hasBlockBetweenObjects(
+        {
+          x: myTank.x,
+          y: myTank.y + (TankSize / 2 - BulletSize / 2),
+          size: BulletSize,
+        },
+        {
+          x: tank.x,
+          y: myTank.y + (TankSize / 2 - BulletSize / 2),
+          size: BulletSize,
         }
+      ) &&
+      euclideanDistance(tank, myTank) <= TankSize * 4
+    ) {
+      if (myTank?.orient === "LEFT" && tank.x < (myTank?.x ?? 0)) {
+        // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
+        shoot();
+        return true;
+      } else if (myTank?.orient === "RIGHT" && tank.x > (myTank?.x ?? 0)) {
+        // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
+        shoot();
+        return true;
+      } else {
+        if (tank.x < (myTank?.x ?? 0)) {
+          saveRoad(MovePriority.SHOOT, ["LEFT", "SHOOT"]);
+        } else {
+          saveRoad(MovePriority.SHOOT, ["RIGHT", "SHOOT"]);
+        }
+        return true;
       }
-    } else {
     }
+  } else {
   }
   return false;
 };
@@ -252,7 +248,7 @@ export const startDodgeRoadSystem = async () => {
       console.log(e);
     } finally {
     }
-  }, 2);
+  }, 1.5);
 };
 
 let intervalFindTargetRoad: any = null;

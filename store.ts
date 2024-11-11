@@ -728,33 +728,26 @@ export const findToDefZoneOnMap = (
       if (!tankMapIndex?.[tankIndex.endY - 1]) {
         tankMapIndex[tankIndex.endY - 1] = {};
       }
-
-      tankMapIndex[tankIndex.startY][tankIndex.startX] = true;
-      tankMapIndex[tankIndex.endY][tankIndex.endX] = true;
-
-      tankMapIndex[tankIndex.startY][tankIndex.startX + 1] = true;
-      tankMapIndex[tankIndex.endY][tankIndex.endX + 1] = true;
-
-      tankMapIndex[tankIndex.startY][tankIndex.startX - 1] = true;
-      tankMapIndex[tankIndex.endY][tankIndex.endX - 1] = true;
       //
-      tankMapIndex[tankIndex.startY + 1][tankIndex.startX] = true;
-      tankMapIndex[tankIndex.endY + 1][tankIndex.endX] = true;
-
-      tankMapIndex[tankIndex.startY + 1][tankIndex.startX + 1] = true;
-      tankMapIndex[tankIndex.endY + 1][tankIndex.endX + 1] = true;
-
-      tankMapIndex[tankIndex.startY + 1][tankIndex.startX - 1] = true;
-      tankMapIndex[tankIndex.endY + 1][tankIndex.endX - 1] = true;
-      //
-      tankMapIndex[tankIndex.startY - 1][tankIndex.startX] = true;
-      tankMapIndex[tankIndex.endY - 1][tankIndex.endX] = true;
-
-      tankMapIndex[tankIndex.startY - 1][tankIndex.startX + 1] = true;
-      tankMapIndex[tankIndex.endY - 1][tankIndex.endX + 1] = true;
-
       tankMapIndex[tankIndex.startY - 1][tankIndex.startX - 1] = true;
-      tankMapIndex[tankIndex.endY - 1][tankIndex.endX - 1] = true;
+      tankMapIndex[tankIndex.startY - 1][tankIndex.startX] = true;
+      tankMapIndex[tankIndex.startY - 1][tankIndex.endX] = true;
+      tankMapIndex[tankIndex.startY - 1][tankIndex.endX + 1] = true;
+      //
+      tankMapIndex[tankIndex.startY][tankIndex.startX - 1] = true;
+      tankMapIndex[tankIndex.startY][tankIndex.startX] = true;
+      tankMapIndex[tankIndex.startY][tankIndex.endX] = true;
+      tankMapIndex[tankIndex.startY][tankIndex.endX + 1] = true;
+      //
+      tankMapIndex[tankIndex.endY][tankIndex.startX - 1] = true;
+      tankMapIndex[tankIndex.endY][tankIndex.startX] = true;
+      tankMapIndex[tankIndex.endY][tankIndex.endX] = true;
+      tankMapIndex[tankIndex.endY][tankIndex.endX + 1] = true;
+      //
+      tankMapIndex[tankIndex.endY + 1][tankIndex.startX - 1] = true;
+      tankMapIndex[tankIndex.endY + 1][tankIndex.startX] = true;
+      tankMapIndex[tankIndex.endY + 1][tankIndex.endX] = true;
+      tankMapIndex[tankIndex.endY + 1][tankIndex.endX + 1] = true;
     }
   });
   //TODO
