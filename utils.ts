@@ -448,7 +448,7 @@ export const checkBulletInsideTank = (
   tankPosition: Position,
   bullet: Position
 ) => {
-  const Threshould = 4;
+  const Threshould = 3;
   if (
     _.inRange(
       bullet.x,
@@ -611,7 +611,7 @@ export const bulletInsideTankHorizontal = (
 export const checkBulletRunningToTank = (
   tankPosition: Position,
   bulletPosition: Position & { orient: Orient },
-  distance = TankSize * 5
+  distance = TankSize * 6
 ) => {
   if (
     bulletInsideTankVertical(tankPosition, bulletPosition) &&

@@ -156,89 +156,20 @@ export const listDefZone: Record<number, Array<Position>> = {
   ],
   4: [
     {
-      x: 6,
-      y: 3,
-    },
-    {
-      x: 9,
-      y: 6,
-    },
-    {
-      x: 6,
-      y: 9,
-    },
-    {
-      x: 3,
-      y: 6,
-    },
-    //
-    {
-      x: 16,
-      y: 3,
-    },
-    {
-      x: 26,
+      x: 19,
       y: 7,
     },
-    //
     {
-      x: 37,
-      y: 3,
-    },
-    {
-      x: 40,
-      y: 6,
-    },
-    {
-      x: 37,
-      y: 9,
+      x: 19,
+      y: 25,
     },
     {
       x: 34,
-      y: 6,
-    },
-    //
-    {
-      x: 37,
-      y: 24,
-    },
-    {
-      x: 40,
-      y: 27,
-    },
-    {
-      x: 37,
-      y: 30,
-    },
-    {
-      x: 34,
-      y: 27,
-    },
-    //
-    {
-      x: 16,
-      y: 26,
-    },
-    {
-      x: 26,
-      y: 30,
-    },
-    //
-    {
-      x: 6,
-      y: 24,
+      y: 16,
     },
     {
       x: 9,
-      y: 27,
-    },
-    {
-      x: 6,
-      y: 30,
-    },
-    {
-      x: 3,
-      y: 27,
+      y: 16,
     },
   ],
   5: [
@@ -760,6 +691,20 @@ export const findToDefZoneOnMap = (testZone?: any) => {
   if (!myTank || !myTank.x || !myTank.y || !listDefZone[mapNumber]) {
     return [];
   }
+  const tankMapIndex: Array<Position> = [];
+  tanks.forEach((tank) => {
+    if (tank.name !== MY_NAME) {
+      let tankIndex = initPosition(
+        Math.floor(tank.x / ObjectSize),
+        Math.floor(tank.y / ObjectSize)
+      );
+      tankMapIndex.push(tankIndex);
+      tankMapIndex.push({ ...tankIndex, x: tankIndex.x + 1 });
+      tankMapIndex.push({ ...tankIndex, x: tankIndex.x - 1 });
+      tankMapIndex.push({ ...tankIndex, y: tankIndex.y + 1 });
+      tankMapIndex.push({ ...tankIndex, y: tankIndex.y - 1 });
+    }
+  });
   //TODO
   const myTankIndex = initPosition(
     Math.floor(myTank.x / ObjectSize),

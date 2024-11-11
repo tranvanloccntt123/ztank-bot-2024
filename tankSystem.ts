@@ -59,20 +59,17 @@ const checkShootVertical = (tank: Tank) => {
             y: tank.y,
             size: BulletSize,
           }
-        )
+        ) &&
+        euclideanDistance(tank, myTank) <= TankSize * 6
       ) {
         if (myTank?.orient === "UP" && tank.y < (myTank?.y ?? 0)) {
           // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
-          if (euclideanDistance(tank, myTank) <= TankSize * 4) {
-            shoot();
-            return true;
-          }
+          shoot();
+          return true;
         } else if (myTank?.orient === "DOWN" && tank.y > (myTank?.y ?? 0)) {
           // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
-          if (euclideanDistance(tank, myTank) <= TankSize * 4) {
-            shoot();
-            return true;
-          }
+          shoot();
+          return true;
         } else {
           if (tank.y < (myTank?.y ?? 0)) {
             saveRoad(MovePriority.SHOOT, ["UP", "SHOOT"]);
@@ -110,20 +107,17 @@ const checkShootHorizontal = (tank: Tank) => {
             y: myTank.y + (TankSize / 2 - BulletSize / 2) - 2,
             size: BulletSize,
           }
-        )
+        ) &&
+        euclideanDistance(tank, myTank) <= TankSize * 6
       ) {
         if (myTank?.orient === "LEFT" && tank.x < (myTank?.x ?? 0)) {
           // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
-          if (euclideanDistance(tank, myTank) <= TankSize * 5) {
-            shoot();
-            return true;
-          }
+          shoot();
+          return true;
         } else if (myTank?.orient === "RIGHT" && tank.x > (myTank?.x ?? 0)) {
           // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
-          if (euclideanDistance(tank, myTank) <= TankSize * 5) {
-            shoot();
-            return true;
-          }
+          shoot();
+          return true;
         } else {
           if (tank.x < (myTank?.x ?? 0)) {
             saveRoad(MovePriority.SHOOT, ["LEFT", "SHOOT"]);
@@ -301,9 +295,9 @@ export const findTargetSystem = async () => {
                 )
               ) {
                 if (lastPosition.x < target!.x) {
-                  list.push("RIGHT");
+                  if (lastPosition.orient !== "RIGHT") list.push("RIGHT");
                 } else {
-                  list.push("LEFT");
+                  if (lastPosition.orient !== "LEFT") list.push("LEFT");
                 }
               } else if (
                 isSameVerticalAxisWithSize(
@@ -312,9 +306,9 @@ export const findTargetSystem = async () => {
                 )
               ) {
                 if (lastPosition.y < target!.y) {
-                  list.push("DOWN");
+                  if (lastPosition.orient !== "DOWN") list.push("DOWN");
                 } else {
-                  list.push("UP");
+                  if (lastPosition.orient !== "UP") list.push("UP");
                 }
               }
             }
