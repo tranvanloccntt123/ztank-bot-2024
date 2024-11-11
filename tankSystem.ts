@@ -18,6 +18,7 @@ import {
   hasBlockPosition,
   isReborn,
   isShootAble,
+  listDefZone,
   mapMatch,
   myTank,
   road,
@@ -135,14 +136,11 @@ const checkShootHorizontal = (tank: Tank) => {
 
 export const startTrickShootSystem = async () => {
   await startPromise;
+  let checking = false;
   setInterval(() => {
     try {
-      if (
-        (myTank?.shootable || isShootAble) &&
-        myTank &&
-        myTank.x &&
-        myTank.y
-      ) {
+      if (isShootAble && myTank && myTank.x && myTank.y && !checking) {
+        checking = true;
         for (const tank of Array.from(tanks.values()).sort((a, b) => {
           const aPosition = euclideanDistance(
             { x: a.x, y: a.y },
@@ -155,9 +153,11 @@ export const startTrickShootSystem = async () => {
           return aPosition - bPosition;
         })) {
           if (checkShootVertical(tank) || checkShootHorizontal(tank)) {
+            checking = false;
             return;
           }
         }
+        checking = false;
       }
     } catch (e) {
       console.log(e);
@@ -178,11 +178,7 @@ export const startIntervalToCheckBullet = async () => {
       if (!mapMatch.length) {
         return;
       }
-      Array.from(bullets.keys()).forEach((id) => {
-        if (!bullets.has(id)) {
-          return;
-        }
-        const bullet = bullets.get(id);
+      bullets.forEach((bullet) => {
         if (!bullet) {
           return;
         }
@@ -193,7 +189,7 @@ export const startIntervalToCheckBullet = async () => {
           runTimePosition?.y < 0 ||
           runTimePosition?.y > MapSize.height
         ) {
-          bullets.delete(id);
+          bullets.delete(bullet.id);
         } else {
           if (
             hasBlockPosition({
@@ -201,14 +197,14 @@ export const startIntervalToCheckBullet = async () => {
               y: runTimePosition?.y ?? 0,
             })
           ) {
-            bullets.delete(id);
+            bullets.delete(bullet.id);
           } else if (
             hasBlockPosition({
               x: (runTimePosition?.x ?? 0) + BulletSize,
               y: (runTimePosition?.y ?? 0) + BulletSize,
             })
           ) {
-            bullets.delete(id);
+            bullets.delete(bullet.id);
           } else {
             bullets.set(bullet.id, {
               ...bullet,
@@ -317,20 +313,39 @@ export const findTargetSystem = async () => {
           }
         }
         if (targetTankName !== "") {
-          const _roadToDefArea = findToDefZoneOnMap();
-          if (_roadToDefArea.length >= 1) {
-            const findLineToDefArea = findRoadOnListMapIndex(
-              myTank!,
-              _roadToDefArea,
-              0
-            );
-            if (findLineToDefArea.length > 1) {
-              saveRoad(
-                MovePriority.NORMAL,
-                findLineToDefArea.map((v) => v.orient)
+          const target = tanks.get(targetTankName);
+          if (euclideanDistance(myTank!, target!) <= TankSize * 4) {
+            const _roadToDefArea = findToDefZoneOnMap();
+            if (_roadToDefArea.length >= 1) {
+              const findLineToDefArea = findRoadOnListMapIndex(
+                myTank!,
+                _roadToDefArea,
+                0
               );
-              return;
+              if (findLineToDefArea.length > 1) {
+                saveRoad(
+                  MovePriority.NORMAL,
+                  findLineToDefArea.map((v) => v.orient)
+                );
+                return;
+              }
             }
+          }
+        }
+        // move to center
+        const _roadToDefArea = findToDefZoneOnMap(listDefZone);
+        if (_roadToDefArea.length >= 1) {
+          const findLineToDefArea = findRoadOnListMapIndex(
+            myTank!,
+            _roadToDefArea,
+            0
+          );
+          if (findLineToDefArea.length > 1) {
+            saveRoad(
+              MovePriority.NORMAL,
+              findLineToDefArea.map((v) => v.orient)
+            );
+            return;
           }
         }
       }

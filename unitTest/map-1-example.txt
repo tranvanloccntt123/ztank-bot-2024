@@ -19,7 +19,7 @@ B                    WWW                  
 B                   WWW                     B 18
 B                  WWW                      B 19
 B                 WWW                       B 20
-B         BB     WWW                        B 21
+B         BB     WWW             BB         B 21
 B         BB     WWWWWWWWWWW     BB         B 22
 B         BB     WWWWWWWWWWW     BB         B 23
 B         BB                     BB         B 24

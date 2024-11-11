@@ -84,9 +84,52 @@ export const listDefZoneV2: Record<
   number,
   Record<number, Record<number, boolean>>
 > = {
-  1: {},
-  2: {},
-  3: {},
+  1: {
+    8: {
+      8: true,
+      35: true,
+    },
+    13: {
+      10: true,
+      33: true,
+    },
+    5: {
+      12: true,
+      29: true,
+    },
+    7: {
+      17: true,
+      26: true,
+    },
+    19: {
+      10: true,
+      33: true,
+    },
+    26: {
+      17: true,
+      26: true,
+    },
+    28: {
+      12: true,
+      29: true,
+    },
+    25: {
+      8: true,
+      35: true,
+    },
+  },
+  2: {
+    8: { 21: true },
+    25: { 21: true },
+    15: { 11: true, 32: true },
+    18: { 11: true, 32: true },
+  },
+  3: {
+    9: { 14: true, 29: true },
+    20: { 12: true, 31: true },
+    13: { 12: true, 31: true },
+    24: { 14: true, 29: true },
+  },
   4: {
     3: { 6: true, 16: true, 37: true },
     6: { 3: true, 9: true, 34: true, 40: true },
@@ -96,91 +139,54 @@ export const listDefZoneV2: Record<
     27: { 3: true, 9: true, 34: true, 40: true },
     30: { 6: true, 26: true, 37: true },
   },
-  5: {},
+  5: {
+    1: { 15: true },
+    3: { 4: true },
+    14: { 4: true },
+    16: { 15: true },
+    17: { 28: true },
+    19: { 39: true },
+    30: {
+      39: true,
+    },
+    32: {
+      28: true,
+    },
+  },
 };
 
-export const listDefZone: Record<number, Array<Position>> = {
-  1: [
-    { x: 17, y: 7 },
-    { x: 24, y: 7 },
-    { x: 32, y: 14 },
-    { x: 32, y: 19 },
-    { x: 17, y: 26 },
-    { x: 24, y: 26 },
-    { x: 9, y: 14 },
-    { x: 9, y: 19 },
-  ],
-  2: [
-    {
-      x: 21,
-      y: 7,
-    },
-    {
-      x: 21,
-      y: 25,
-    },
-    {
-      x: 25,
-      y: 17,
-    },
-    {
-      x: 15,
-      y: 17,
-    },
-  ],
-  3: [
-    {
-      x: 20,
-      y: 7,
-    },
-    {
-      x: 20,
-      y: 25,
-    },
-    {
-      x: 34,
-      y: 23,
-    },
-    {
-      x: 7,
-      y: 23,
-    },
-    {
-      x: 34,
-      y: 10,
-    },
-    {
-      x: 7,
-      y: 10,
-    },
-  ],
-  4: [
-    {
-      x: 19,
-      y: 7,
-    },
-    {
-      x: 19,
-      y: 25,
-    },
-    {
-      x: 34,
-      y: 16,
-    },
-    {
-      x: 9,
-      y: 16,
-    },
-  ],
-  5: [
-    { x: 20, y: 11 },
-    { x: 20, y: 22 },
-    { x: 30, y: 15 },
-    {
-      x: 12,
-      y: 17,
-    },
-  ],
+export const listDefZone: Record<
+  number,
+  Record<number, Record<number, boolean>>
+> = {
+  1: {
+    7: { 17: true, 24: true },
+    14: { 32: true, 9: true },
+    19: { 32: true, 9: true },
+    26: { 17: true, 24: true },
+  },
+  2: {
+    7: { 21: true },
+    25: { 21: true },
+    17: { 25: true, 15: true },
+  },
+  3: {
+    7: { 20: true },
+    25: { 20: true },
+    23: { 34: true, 7: true },
+    10: { 34: true, 7: true },
+  },
+  4: {
+    7: { 19: true },
+    25: { 19: true },
+    16: { 34: true, 9: true },
+  },
+  5: {
+    11: { 20: true },
+    22: { 20: true },
+    15: { 30: true },
+    17: { 12: true },
+  },
 };
 
 /*
@@ -687,7 +693,9 @@ export const findTargetTankV2 = () => {
   return result;
 };
 
-export const findToDefZoneOnMap = (testZone?: any) => {
+export const findToDefZoneOnMap = (
+  listZone?: Record<number, Record<number, Record<number, boolean>>>
+) => {
   if (!myTank || !myTank.x || !myTank.y || !listDefZone[mapNumber]) {
     return [];
   }
@@ -755,7 +763,8 @@ export const findToDefZoneOnMap = (testZone?: any) => {
     Math.floor(myTank.y / ObjectSize)
   );
 
-  const defZones = listDefZoneV2[mapNumber] ?? {};
+  const defZones =
+    (listZone ? listZone[mapNumber] : listDefZoneV2[mapNumber]) ?? {};
 
   const result: Array<Position> = [];
   const checked: any = {
