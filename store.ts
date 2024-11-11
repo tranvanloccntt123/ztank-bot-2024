@@ -691,18 +691,62 @@ export const findToDefZoneOnMap = (testZone?: any) => {
   if (!myTank || !myTank.x || !myTank.y || !listDefZone[mapNumber]) {
     return [];
   }
-  const tankMapIndex: Array<Position> = [];
+  //y - x - true
+  const tankMapIndex: Record<number, Record<number, boolean>> = [];
   tanks.forEach((tank) => {
     if (tank.name !== MY_NAME) {
-      let tankIndex = initPosition(
-        Math.floor(tank.x / ObjectSize),
-        Math.floor(tank.y / ObjectSize)
-      );
-      tankMapIndex.push(tankIndex);
-      tankMapIndex.push({ ...tankIndex, x: tankIndex.x + 1 });
-      tankMapIndex.push({ ...tankIndex, x: tankIndex.x - 1 });
-      tankMapIndex.push({ ...tankIndex, y: tankIndex.y + 1 });
-      tankMapIndex.push({ ...tankIndex, y: tankIndex.y - 1 });
+      let tankIndex = mapIndexOnMapMatch(tank, ObjectSize);
+
+      if (!tankMapIndex?.[tankIndex.startY]) {
+        tankMapIndex[tankIndex.startY] = {};
+      }
+
+      if (!tankMapIndex?.[tankIndex.endY]) {
+        tankMapIndex[tankIndex.endY] = {};
+      }
+
+      if (!tankMapIndex?.[tankIndex.startY + 1]) {
+        tankMapIndex[tankIndex.startY + 1] = {};
+      }
+
+      if (!tankMapIndex?.[tankIndex.startY - 1]) {
+        tankMapIndex[tankIndex.startY - 1] = {};
+      }
+
+      if (!tankMapIndex?.[tankIndex.endY + 1]) {
+        tankMapIndex[tankIndex.endY + 1] = {};
+      }
+
+      if (!tankMapIndex?.[tankIndex.endY - 1]) {
+        tankMapIndex[tankIndex.endY - 1] = {};
+      }
+
+      tankMapIndex[tankIndex.startY][tankIndex.startX] = true;
+      tankMapIndex[tankIndex.endY][tankIndex.endX] = true;
+
+      tankMapIndex[tankIndex.startY][tankIndex.startX + 1] = true;
+      tankMapIndex[tankIndex.endY][tankIndex.endX + 1] = true;
+
+      tankMapIndex[tankIndex.startY][tankIndex.startX - 1] = true;
+      tankMapIndex[tankIndex.endY][tankIndex.endX - 1] = true;
+      //
+      tankMapIndex[tankIndex.startY + 1][tankIndex.startX] = true;
+      tankMapIndex[tankIndex.endY + 1][tankIndex.endX] = true;
+
+      tankMapIndex[tankIndex.startY + 1][tankIndex.startX + 1] = true;
+      tankMapIndex[tankIndex.endY + 1][tankIndex.endX + 1] = true;
+
+      tankMapIndex[tankIndex.startY + 1][tankIndex.startX - 1] = true;
+      tankMapIndex[tankIndex.endY + 1][tankIndex.endX - 1] = true;
+      //
+      tankMapIndex[tankIndex.startY - 1][tankIndex.startX] = true;
+      tankMapIndex[tankIndex.endY - 1][tankIndex.endX] = true;
+
+      tankMapIndex[tankIndex.startY - 1][tankIndex.startX + 1] = true;
+      tankMapIndex[tankIndex.endY - 1][tankIndex.endX + 1] = true;
+
+      tankMapIndex[tankIndex.startY - 1][tankIndex.startX - 1] = true;
+      tankMapIndex[tankIndex.endY - 1][tankIndex.endX - 1] = true;
     }
   });
   //TODO
@@ -790,7 +834,8 @@ export const findToDefZoneOnMap = (testZone?: any) => {
         ) ||
         ["B", "T", "W"].includes(
           mapMatch[moveNextPosition.y + 1][moveNextPosition.x + 1] as never
-        )
+        ) ||
+        tankMapIndex?.[moveNextPosition.y]?.[moveNextPosition.x]
       ) {
         continue;
       }

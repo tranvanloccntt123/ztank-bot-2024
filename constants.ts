@@ -48,7 +48,7 @@ export const TankSpeed: number = 3;
 
 export const BulletSpeed: number = 4;
 
-export const TankTimeSpeed: number = 16.5; //ms
+export const TankTimeSpeed: number = 17; //ms
 
 export const BulletTimeSpeed: number = 17; //ms
 

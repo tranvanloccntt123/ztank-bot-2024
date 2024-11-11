@@ -43,7 +43,7 @@ const checkShootVertical = (tank: Tank) => {
     isReborn.has(tank.name) ||
     !isShootAble
   ) {
-    return;
+    return false;
   }
   if (isSameVerticalAxisWithSize(myTank, tank)) {
     if (otherTankInsideVertical(tank)) {
@@ -60,7 +60,7 @@ const checkShootVertical = (tank: Tank) => {
             size: BulletSize,
           }
         ) &&
-        euclideanDistance(tank, myTank) <= TankSize * 6
+        euclideanDistance(tank, myTank) <= TankSize * 4
       ) {
         if (myTank?.orient === "UP" && tank.y < (myTank?.y ?? 0)) {
           // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
@@ -91,7 +91,7 @@ const checkShootHorizontal = (tank: Tank) => {
     isReborn.has(tank.name) ||
     !isShootAble
   ) {
-    return;
+    return false;
   }
   if (isSameHorizontalAxisWithSize(myTank, tank)) {
     if (otherTankInsideHorizontal(tank)) {
@@ -108,7 +108,7 @@ const checkShootHorizontal = (tank: Tank) => {
             size: BulletSize,
           }
         ) &&
-        euclideanDistance(tank, myTank) <= TankSize * 6
+        euclideanDistance(tank, myTank) <= TankSize * 4
       ) {
         if (myTank?.orient === "LEFT" && tank.x < (myTank?.x ?? 0)) {
           // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
@@ -162,7 +162,7 @@ export const startTrickShootSystem = async () => {
     } catch (e) {
       console.log(e);
     }
-  }, 2);
+  }, 1);
 };
 
 let countDownMove: any = null;
@@ -337,5 +337,5 @@ export const findTargetSystem = async () => {
     } catch (e) {
       console.log(e);
     }
-  }, TankTimeSpeed * 2);
+  }, TankTimeSpeed / 2);
 };
