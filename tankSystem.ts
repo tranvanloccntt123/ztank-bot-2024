@@ -207,7 +207,7 @@ export const startIntervalToCheckBullet = async () => {
     } catch (e) {
       console.log("startIntervalToCheckBullet", e);
     }
-  }, BulletTimeSpeed);
+  }, 1);
 };
 
 let intervalDodge: any = null;
