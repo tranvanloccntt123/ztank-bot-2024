@@ -18,10 +18,8 @@ import {
   checkFullTankNearestBlock,
   checkTankOverlap,
   mapIndexOnMapMatch,
-  otherTankInsideHorizontal,
-  otherTankInsideVertical,
+  inRange,
 } from "./utils";
-import * as _ from "lodash";
 import { map1 } from "./map/map1";
 import { map2 } from "./map/map2";
 import { map3 } from "./map/map3";
@@ -303,6 +301,9 @@ export const saveRoad = (
   data: Array<Orient | "SHOOT" | "PAUSE">
 ) => {
   try {
+    if (priority === MovePriority.SHOOT && !isShootAble) {
+      return;
+    }
     if (data.length) {
       if (priority < road.priority) {
         road.priority = priority;
@@ -779,8 +780,8 @@ export const findToDefZoneOnMap = (
     let finded = false;
     if (
       defZones[currentPosition.y]?.[currentPosition.x] &&
-      !_.inRange(currentPosition.x, myTankIndex.x - 1, myTankIndex.x + 2) &&
-      !_.inRange(currentPosition.y, myTankIndex.y - 1, myTankIndex.y + 2)
+      !inRange(currentPosition.x, myTankIndex.x - 1, myTankIndex.x + 2) &&
+      !inRange(currentPosition.y, myTankIndex.y - 1, myTankIndex.y + 2)
     ) {
       let checkTankInside: boolean = false;
       tanks.forEach((tank) => {
@@ -789,8 +790,8 @@ export const findToDefZoneOnMap = (
         }
         const mapIndex = mapIndexOnMapMatch(tank, TankOnObjectPercent);
         if (
-          _.inRange(currentPosition.x, mapIndex.startX, mapIndex.endX + 1) ||
-          _.inRange(currentPosition.y, mapIndex.startY, mapIndex.endY + 1)
+          inRange(currentPosition.x, mapIndex.startX, mapIndex.endX + 1) ||
+          inRange(currentPosition.y, mapIndex.startY, mapIndex.endY + 1)
         ) {
           checkTankInside = true;
         }
@@ -1036,8 +1037,8 @@ export const findToBlockNearest = (
         if (tankPosition) {
           if (
             correct &&
-            _.inRange(tankPosition.x, 100, 800) &&
-            _.inRange(tankPosition.y, 100, 600)
+            inRange(tankPosition.x, 100, 800) &&
+            inRange(tankPosition.y, 100, 600)
           ) {
             result.push(...revertRoad(findRoad, tankPosition as any));
             break;
@@ -1388,12 +1389,6 @@ export const dodgeBullets = (
           _tankPosition as never,
           _bullets,
           _tankPosition!.ms
-        ) &&
-        !(
-          moveNextPosition!.x >= 848 ||
-          moveNextPosition!.x < 20 ||
-          moveNextPosition!.y >= 648 ||
-          moveNextPosition!.y < 20
         )
       ) {
         if (!dodgeRoad?.[moveNextPosition.y]?.[moveNextPosition.x]) {

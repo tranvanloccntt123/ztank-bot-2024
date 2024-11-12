@@ -1,4 +1,4 @@
-import { MY_NAME, TankSize, TankTimeSpeed } from "./constants";
+import { TankTimeSpeed } from "./constants";
 import { joinMatch, moveTank, shoot } from "./connect";
 import {
   bulletPositionAtPlusTime,
@@ -6,15 +6,11 @@ import {
   sleep,
   tankAtNextTime,
   checkBulletRunningToTank,
-  isSameVerticalAxisWithSize,
-  euclideanDistance,
-  isSameHorizontalAxisWithSize,
 } from "./utils";
 import {
   MovePriority,
   bullets,
   clearRoad,
-  lastMoveTime,
   movePromise,
   myTank,
   resolveMovePromise,
@@ -22,9 +18,7 @@ import {
   resolveStartPromise,
   road,
   startPromise,
-  tanks,
 } from "./store";
-import * as _ from "lodash";
 import {
   findTargetSystem,
   startDodgeRoadSystem,

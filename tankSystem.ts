@@ -1,4 +1,3 @@
-import _ from "lodash";
 import {
   BulletSize,
   MapSize,
@@ -12,7 +11,6 @@ import {
   dodgeBullets,
   findRoadOnListMapIndex,
   findTargetTankV2,
-  findToBlockNearest,
   findToDefZoneOnMap,
   hasBlockBetweenObjects,
   hasBlockPosition,
@@ -32,6 +30,7 @@ import {
   euclideanDistance,
   isSameHorizontalAxisWithSize,
   isSameVerticalAxisWithSize,
+  last,
   otherTankInsideHorizontal,
   otherTankInsideVertical,
 } from "./utils";
@@ -46,8 +45,12 @@ const checkShootVertical = (tank: Tank) => {
   ) {
     return false;
   }
-  if (otherTankInsideVertical(tank)) {
+  if (
+    otherTankInsideVertical(tank) &&
+    euclideanDistance(tank, myTank) <= TankSize * 5
+  ) {
     if (
+      euclideanDistance(tank, myTank) <= TankSize * 1.5 ||
       !hasBlockBetweenObjects(
         {
           x: myTank.x + (TankSize / 2 - BulletSize / 2),
@@ -59,8 +62,7 @@ const checkShootVertical = (tank: Tank) => {
           y: tank.y,
           size: BulletSize,
         }
-      ) &&
-      euclideanDistance(tank, myTank) <= TankSize * 4
+      )
     ) {
       if (myTank?.orient === "UP" && tank.y < (myTank?.y ?? 0)) {
         // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
@@ -92,8 +94,12 @@ const checkShootHorizontal = (tank: Tank) => {
   ) {
     return false;
   }
-  if (otherTankInsideHorizontal(tank)) {
+  if (
+    otherTankInsideHorizontal(tank) &&
+    euclideanDistance(tank, myTank) <= TankSize * 5
+  ) {
     if (
+      euclideanDistance(tank, myTank) <= TankSize * 1.5 ||
       !hasBlockBetweenObjects(
         {
           x: myTank.x,
@@ -105,8 +111,7 @@ const checkShootHorizontal = (tank: Tank) => {
           y: myTank.y + (TankSize / 2 - BulletSize / 2),
           size: BulletSize,
         }
-      ) &&
-      euclideanDistance(tank, myTank) <= TankSize * 4
+      )
     ) {
       if (myTank?.orient === "LEFT" && tank.x < (myTank?.x ?? 0)) {
         // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
@@ -248,7 +253,7 @@ export const startDodgeRoadSystem = async () => {
       console.log(e);
     } finally {
     }
-  }, 1.5);
+  }, TankTimeSpeed / 5);
 };
 
 let intervalFindTargetRoad: any = null;
@@ -267,66 +272,44 @@ export const findTargetSystem = async () => {
         myTank.y &&
         road.priority > MovePriority.NORMAL
       ) {
-        if (isShootAble || myTank.shootable) {
-          const findLine = findTargetTankV2();
-          const isSmallList = findLine.length > 4;
-          const _road = findRoadOnListMapIndex(
-            myTank!,
-            isSmallList ? findLine.slice(0, 3) : findLine,
-            0
-          );
-          if (_road.length >= 1) {
-            const list = _road.map((v) => v.orient);
-            if (!isSmallList) {
-              const target = tanks.get(targetTankName);
-              const lastPosition = _.last(_road);
-              if (
-                isSameHorizontalAxisWithSize(
-                  { ...lastPosition, size: TankSize },
-                  target!
-                )
-              ) {
-                if (lastPosition.x < target!.x) {
-                  if (lastPosition.orient !== "RIGHT") list.push("RIGHT");
-                } else {
-                  if (lastPosition.orient !== "LEFT") list.push("LEFT");
-                }
-              } else if (
-                isSameVerticalAxisWithSize(
-                  { ...lastPosition, size: TankSize },
-                  target!
-                )
-              ) {
-                if (lastPosition.y < target!.y) {
-                  if (lastPosition.orient !== "DOWN") list.push("DOWN");
-                } else {
-                  if (lastPosition.orient !== "UP") list.push("UP");
-                }
+        const findLine = findTargetTankV2();
+        const isSmallList = findLine.length > 4;
+        const _road = findRoadOnListMapIndex(
+          myTank!,
+          isSmallList ? findLine.slice(0, 3) : findLine,
+          0
+        );
+        if (_road.length >= 1) {
+          const list = _road.map((v) => v.orient);
+          if (!isSmallList) {
+            const target = tanks.get(targetTankName);
+            const lastPosition = last(_road);
+            if (
+              isSameHorizontalAxisWithSize(
+                { ...lastPosition, size: TankSize },
+                target!
+              )
+            ) {
+              if (lastPosition.x < target!.x) {
+                if (lastPosition.orient !== "RIGHT") list.push("RIGHT");
+              } else {
+                if (lastPosition.orient !== "LEFT") list.push("LEFT");
               }
-            }
-            saveRoad(MovePriority.NORMAL, list);
-            return;
-          }
-        }
-        if (targetTankName !== "") {
-          const target = tanks.get(targetTankName);
-          if (euclideanDistance(myTank!, target!) <= TankSize * 4) {
-            const _roadToDefArea = findToDefZoneOnMap();
-            if (_roadToDefArea.length >= 1) {
-              const findLineToDefArea = findRoadOnListMapIndex(
-                myTank!,
-                _roadToDefArea,
-                0
-              );
-              if (findLineToDefArea.length > 1) {
-                saveRoad(
-                  MovePriority.NORMAL,
-                  findLineToDefArea.map((v) => v.orient)
-                );
-                return;
+            } else if (
+              isSameVerticalAxisWithSize(
+                { ...lastPosition, size: TankSize },
+                target!
+              )
+            ) {
+              if (lastPosition.y < target!.y) {
+                if (lastPosition.orient !== "DOWN") list.push("DOWN");
+              } else {
+                if (lastPosition.orient !== "UP") list.push("UP");
               }
             }
           }
+          saveRoad(MovePriority.NORMAL, list);
+          return;
         }
         // move to center
         const _roadToDefArea = findToDefZoneOnMap(listDefZone);
@@ -348,5 +331,5 @@ export const findTargetSystem = async () => {
     } catch (e) {
       console.log(e);
     }
-  }, TankTimeSpeed / 2);
+  }, TankTimeSpeed * 2);
 };

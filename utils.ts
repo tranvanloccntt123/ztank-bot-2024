@@ -15,11 +15,9 @@ import {
   bullets,
   hasBlockPosition,
   hasObjectPosition,
-  isReboring,
   isReborn,
   myTank,
 } from "./store";
-import * as _ from "lodash";
 
 export const initPosition = (x: number, y: number) => ({ x, y });
 
@@ -450,12 +448,12 @@ export const checkBulletInsideTank = (
 ) => {
   const Threshould = 3;
   if (
-    _.inRange(
+    inRange(
       bullet.x,
       tankPosition.x - Threshould,
       tankPosition.x + TankSize + 1 + Threshould
     ) &&
-    _.inRange(
+    inRange(
       bullet.y,
       tankPosition.y - Threshould,
       tankPosition.y + TankSize + 1 + Threshould
@@ -464,12 +462,12 @@ export const checkBulletInsideTank = (
     return true;
   }
   if (
-    _.inRange(
+    inRange(
       bullet.x + BulletSize,
       tankPosition.x - Threshould,
       tankPosition.x + TankSize + 1 + Threshould
     ) &&
-    _.inRange(
+    inRange(
       bullet.y,
       tankPosition.y - Threshould,
       tankPosition.y + TankSize + 1 + Threshould
@@ -478,12 +476,12 @@ export const checkBulletInsideTank = (
     return true;
   }
   if (
-    _.inRange(
+    inRange(
       bullet.x,
       tankPosition.x - Threshould,
       tankPosition.x + TankSize + 1 + Threshould
     ) &&
-    _.inRange(
+    inRange(
       bullet.y + BulletSize,
       tankPosition.y - Threshould,
       tankPosition.y + TankSize + 1 + Threshould
@@ -492,12 +490,12 @@ export const checkBulletInsideTank = (
     return true;
   }
   if (
-    _.inRange(
+    inRange(
       bullet.x + BulletSize,
       tankPosition.x - Threshould,
       tankPosition.x + TankSize + 1 + Threshould
     ) &&
-    _.inRange(
+    inRange(
       bullet.y + BulletSize,
       tankPosition.y - Threshould,
       tankPosition.y + TankSize + 1 + Threshould
@@ -514,12 +512,12 @@ export const bulletInsideTankVertical = (
 ) => {
   const threshould = TankSpeed + 1;
   return (
-    _.inRange(
+    inRange(
       bulletPosition?.x ?? 0,
       tankPosition.x - threshould,
       tankPosition.x + TankSize + threshould + 1
     ) ||
-    _.inRange(
+    inRange(
       (bulletPosition?.x ?? 0) + BulletSize,
       tankPosition.x - threshould,
       tankPosition.x + TankSize + 1 + threshould
@@ -535,22 +533,22 @@ export const otherTankInsideVertical = (
     return false;
   }
   return (
-    _.inRange(
+    inRange(
       tank?.x ?? 0,
       currentPosition.x + (TankSize / 2 - BulletSize / 2),
       currentPosition.x + TankSize - (TankSize / 2 - BulletSize / 2)
     ) ||
-    _.inRange(
+    inRange(
       (tank?.x ?? 0) + TankSize,
       currentPosition.x + (TankSize / 2 - BulletSize / 2),
       currentPosition.x + TankSize - (TankSize / 2 - BulletSize / 2)
     ) ||
-    _.inRange(
+    inRange(
       currentPosition.x + (TankSize / 2 - BulletSize / 2),
       tank.x,
       tank.x + TankSize
     ) ||
-    _.inRange(
+    inRange(
       currentPosition.x + (TankSize / 2 - BulletSize / 2) + BulletSize,
       tank.x,
       tank.x + TankSize
@@ -566,22 +564,22 @@ export const otherTankInsideHorizontal = (
     return false;
   }
   return (
-    _.inRange(
+    inRange(
       tank?.y ?? 0,
       currentPosition.y + (TankSize / 2 - BulletSize / 2),
       currentPosition.y + TankSize - (TankSize / 2 - BulletSize / 2)
     ) ||
-    _.inRange(
+    inRange(
       (tank?.y ?? 0) + TankSize,
       currentPosition.y + (TankSize / 2 - BulletSize / 2),
       currentPosition.y + TankSize - (TankSize / 2 - BulletSize / 2)
     ) ||
-    _.inRange(
+    inRange(
       currentPosition.y + (TankSize / 2 - BulletSize / 2),
       tank.y,
       tank.y + TankSize
     ) ||
-    _.inRange(
+    inRange(
       currentPosition.y + (TankSize / 2 - BulletSize / 2) + BulletSize,
       tank.y,
       tank.y + TankSize
@@ -595,12 +593,12 @@ export const bulletInsideTankHorizontal = (
 ) => {
   const threshould = TankSpeed + 1;
   return (
-    _.inRange(
+    inRange(
       bulletPosition?.y ?? 0,
       tankPosition.y - threshould,
       tankPosition.y + TankSize + threshould + 1
     ) ||
-    _.inRange(
+    inRange(
       (bulletPosition?.y ?? 0) + BulletSize,
       tankPosition.y - threshould,
       tankPosition.y + TankSize + threshould + 1
@@ -731,3 +729,8 @@ export const isOverlap = (
   // Nếu chồng lấn trên cả trục x và y thì trả về true (overlap)
   return overlapX && overlapY;
 };
+
+export const inRange = (value: number, start: number, end: number) =>
+  value >= start && value <= end;
+
+export const last = (array: Array<any>) => array?.length ? array[array?.length - 1] : undefined;
