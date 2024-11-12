@@ -87,31 +87,6 @@ const init = async () => {
               }
             }
           }
-
-          if (canMoveNextPosition) {
-            tanks.forEach((tank) => {
-              if (
-                tank.name === MY_NAME ||
-                !tank.shootable ||
-                (tank.shootCooldown ?? 0) <= 20
-              ) {
-                return;
-              }
-              if (
-                (isSameVerticalAxisWithSize(tank, {
-                  ...nextPosition,
-                  size: TankSize,
-                }) ||
-                  isSameHorizontalAxisWithSize(tank, {
-                    ...nextPosition,
-                    size: TankSize,
-                  })) &&
-                euclideanDistance(tank, { ...nextPosition }) <= TankSize * 2
-              ) {
-                canMoveNextPosition = false;
-              }
-            });
-          }
         }
 
         if (canMoveNextPosition) {

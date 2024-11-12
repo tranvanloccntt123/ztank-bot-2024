@@ -1081,9 +1081,9 @@ export const findToBlockNearest = (
             );
             if (
               !(
-                moveNextPosition!.x >= 848 ||
+                moveNextPosition!.x >= 879 ||
                 moveNextPosition!.x < 20 ||
-                moveNextPosition!.y >= 648 ||
+                moveNextPosition!.y >= 679 ||
                 moveNextPosition!.y < 20
               )
             ) {
@@ -1143,16 +1143,7 @@ export const checkTankInLine = (
   if (
     (isVertical || isHorizontal) &&
     euclideanDistance(tankPosition, tank) <= (distance ?? TankSize * 4) &&
-    euclideanDistance(tankPosition, tank) >= TankSize &&
-    !hasBlockBetweenObjects(
-      { x: tank.x, y: tank.y, size: TankSize },
-      {
-        x: tankPosition.x,
-        y: tankPosition.y,
-        size: TankSize,
-      },
-      isHorizontal ? true : false
-    )
+    euclideanDistance(tankPosition, tank) >= TankSize * 1.5
   ) {
     return true;
   }
@@ -1271,9 +1262,9 @@ export const findRoadOnListMapIndex = (
             if (
               !checkTankPositionIsObject(moveNextPosition as never) &&
               !(
-                moveNextPosition!.x >= 848 ||
+                moveNextPosition!.x >= 879 ||
                 moveNextPosition!.x < 20 ||
-                moveNextPosition!.y >= 648 ||
+                moveNextPosition!.y >= 679 ||
                 moveNextPosition!.y < 20
               )
             ) {
@@ -1325,21 +1316,11 @@ export const findRoadToTarget = (
         { ...tankPosition, ms: ms },
       ];
 
-      const targetDistance = findDistance.find(
-        (v) => v < euclideanDistance(tankPosition as never, tank as never)
-      );
-
       while (queue.length) {
         const tankPosition = queue.shift();
         if (tankPosition && tankPosition?.ms < 2000) {
           if (tank) {
-            if (
-              checkTankInLine(
-                tankPosition,
-                tank,
-                targetDistance ?? TankSize * 4
-              )
-            ) {
+            if (checkTankInLine(tankPosition, tank, TankSize * 3)) {
               result.push(...revertRoad(findRoad, tankPosition as any));
               break;
             }
@@ -1354,9 +1335,9 @@ export const findRoadToTarget = (
           if (
             !checkTankPositionIsObject(moveNextPosition as never) &&
             !(
-              moveNextPosition!.x >= 848 ||
+              moveNextPosition!.x >= 879 ||
               moveNextPosition!.x < 20 ||
-              moveNextPosition!.y >= 648 ||
+              moveNextPosition!.y >= 679 ||
               moveNextPosition!.y < 20
             )
           ) {
@@ -1420,9 +1401,9 @@ export const dodgeBullets = (
             _tankPosition!.ms
           )) ||
         !(
-          moveNextPosition!.x >= 848 ||
+          moveNextPosition!.x >= 879 ||
           moveNextPosition!.x < 20 ||
-          moveNextPosition!.y >= 648 ||
+          moveNextPosition!.y >= 679 ||
           moveNextPosition!.y < 20
         )
       ) {

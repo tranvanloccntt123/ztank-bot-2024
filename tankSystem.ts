@@ -47,12 +47,12 @@ export const startTrickShootSystem = async () => {
         Array.from(tanks.values())
           .sort((a, b) => {
             const aPosition = euclideanDistance(
-              { x: a.x, y: a.y },
-              { x: myTank!.x, y: myTank!.y }
+              { x: a.x + TankSize / 2, y: a.y + TankSize / 2 },
+              { x: myTank!.x + TankSize / 2, y: myTank!.y + TankSize / 2 }
             );
             const bPosition = euclideanDistance(
-              { x: b.x, y: b.y },
-              { x: myTank!.x, y: myTank!.y }
+              { x: b.x + TankSize / 2, y: b.y + TankSize / 2 },
+              { x: myTank!.x + TankSize / 2, y: myTank!.y + TankSize / 2 }
             );
             return aPosition - bPosition;
           })
@@ -69,7 +69,10 @@ export const startTrickShootSystem = async () => {
             //Vertical
             if (otherTankInsideVertical(tank)) {
               if (
-                euclideanDistance(tank, myTank) <= 53 ||
+                euclideanDistance(
+                  { x: tank.x + TankSize / 2, y: tank.y + TankSize / 2 },
+                  { x: myTank.x + TankSize / 2, y: myTank.y + TankSize / 2 }
+                ) <= 53 ||
                 !hasBlockBetweenObjects(
                   {
                     x: myTank.x + (TankSize / 2 - BulletSize / 2) - 2,
@@ -85,7 +88,13 @@ export const startTrickShootSystem = async () => {
               ) {
                 if (myTank?.orient === "UP" && tank.y < (myTank?.y ?? 0)) {
                   // saveRoad(MovePriority.SHOOT, ["SHOOT"]);
-                  if (euclideanDistance(tank, myTank) <= TankSize * 6) {
+                  if (
+                    euclideanDistance(
+                      { x: tank.x + TankSize / 2, y: tank.y + TankSize / 2 },
+                      { x: myTank.x + TankSize / 2, y: myTank.y + TankSize / 2 }
+                    ) <=
+                    TankSize * 6
+                  ) {
                     shoot();
                   }
                 } else if (
@@ -227,7 +236,7 @@ export const startDodgeRoadSystem = async () => {
       ) {
         if (bullets.size) {
           const _dodge = dodgeBullets(myTank, 0);
-          if (!_dodge.isSafe && _dodge.result.length) {
+          if (!_dodge.isSafe && _dodge.result.length >= 1) {
             saveRoad(
               MovePriority.DODGE,
               _dodge.result

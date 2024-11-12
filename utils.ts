@@ -510,7 +510,7 @@ export const bulletInsideTankVertical = (
   tankPosition: Position,
   bulletPosition: Position
 ) => {
-  const threshould = TankSpeed + 1;
+  const threshould = TankSpeed + 4;
   return (
     inRange(
       bulletPosition?.x ?? 0,
@@ -591,7 +591,7 @@ export const bulletInsideTankHorizontal = (
   tankPosition: Position,
   bulletPosition: Position
 ) => {
-  const threshould = TankSpeed + 1;
+  const threshould = TankSpeed + 4;
   return (
     inRange(
       bulletPosition?.y ?? 0,
@@ -609,7 +609,7 @@ export const bulletInsideTankHorizontal = (
 export const checkBulletRunningToTank = (
   tankPosition: Position,
   bulletPosition: Position & { orient: Orient },
-  distance = TankSize * 6
+  distance = TankSize * 6.5
 ) => {
   if (
     bulletInsideTankVertical(tankPosition, bulletPosition) &&
@@ -731,6 +731,6 @@ export const isOverlap = (
 };
 
 export const inRange = (value: number, start: number, end: number) =>
-  value >= start && value <= end;
+  value >= start && value < end;
 
 export const last = (array: Array<any>) => array?.length ? array[array?.length - 1] : undefined;
