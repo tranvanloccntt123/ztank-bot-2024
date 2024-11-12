@@ -519,43 +519,15 @@ export const checkBulletInsideBlock = (position: Position) => {
   );
 };
 
-const movePostionDirection = [
+const movePositionDirection: Array<Position> = [
   { x: 1, y: 0 }, // Di chuyển theo x+
   { x: -1, y: 0 }, // Di chuyển theo x-
   { x: 0, y: 1 }, // Di chuyển theo y+
   { x: 0, y: -1 }, // Di chuyển theo y-
 ];
 
-const checkTankSafe = (
-  current: Position & { orient: Orient; size: number },
-  target: Position & { orient: Orient; size: number }
-) => {
-  if (
-    euclideanDistance(current, target) >= 3 &&
-    euclideanDistance(current, target) <= 5
-  ) {
-    if (
-      (target.x === target.x &&
-        !hasBlockBetweenObjects(current, target, false)) ||
-      (target.y === current.y && !hasBlockBetweenObjects(current, target))
-    ) {
-      // if (target.orient === "UP" && current.y < target.y) {
-      //   return false;
-      // }
-      // if (target.orient === "DOWN" && current.y > target.y) {
-      //   return false;
-      // }
-      // if (target.orient === "LEFT" && current.x < target.x) {
-      //   return false;
-      // }
-      // if (target.orient === "RIGHT" && current.x > target.x) {
-      //   return false;
-      // }
-
-      return true;
-    }
-  }
-  return false;
+const movePositionDirectionRandom = (): Array<Position> => {
+  return movePositionDirection.sort(() => Math.random() - 0.5);
 };
 
 export const findTargetTankV2 = () => {
@@ -596,6 +568,57 @@ export const findTargetTankV2 = () => {
       y: myTankIndex.y,
     },
   ];
+
+  const tankMapIndexUnVisible: Record<number, Record<number, boolean>> = [];
+  tanks.forEach((tank) => {
+    if (tank.name !== MY_NAME) {
+      let tankIndex = mapIndexOnMapMatch(tank, ObjectSize);
+
+      if (!tankMapIndexUnVisible?.[tankIndex.startY]) {
+        tankMapIndexUnVisible[tankIndex.startY] = {};
+      }
+
+      if (!tankMapIndex?.[tankIndex.endY]) {
+        tankMapIndexUnVisible[tankIndex.endY] = {};
+      }
+
+      if (!tankMapIndexUnVisible?.[tankIndex.startY + 1]) {
+        tankMapIndexUnVisible[tankIndex.startY + 1] = {};
+      }
+
+      if (!tankMapIndexUnVisible?.[tankIndex.startY - 1]) {
+        tankMapIndexUnVisible[tankIndex.startY - 1] = {};
+      }
+
+      if (!tankMapIndexUnVisible?.[tankIndex.endY + 1]) {
+        tankMapIndexUnVisible[tankIndex.endY + 1] = {};
+      }
+
+      if (!tankMapIndexUnVisible?.[tankIndex.endY - 1]) {
+        tankMapIndexUnVisible[tankIndex.endY - 1] = {};
+      }
+      //
+      tankMapIndexUnVisible[tankIndex.startY - 1][tankIndex.startX - 1] = true;
+      tankMapIndexUnVisible[tankIndex.startY - 1][tankIndex.startX] = true;
+      tankMapIndexUnVisible[tankIndex.startY - 1][tankIndex.endX] = true;
+      tankMapIndexUnVisible[tankIndex.startY - 1][tankIndex.endX + 1] = true;
+      //
+      tankMapIndexUnVisible[tankIndex.startY][tankIndex.startX - 1] = true;
+      tankMapIndexUnVisible[tankIndex.startY][tankIndex.startX] = true;
+      tankMapIndexUnVisible[tankIndex.startY][tankIndex.endX] = true;
+      tankMapIndexUnVisible[tankIndex.startY][tankIndex.endX + 1] = true;
+      //
+      tankMapIndexUnVisible[tankIndex.endY][tankIndex.startX - 1] = true;
+      tankMapIndexUnVisible[tankIndex.endY][tankIndex.startX] = true;
+      tankMapIndexUnVisible[tankIndex.endY][tankIndex.endX] = true;
+      tankMapIndexUnVisible[tankIndex.endY][tankIndex.endX + 1] = true;
+      //
+      tankMapIndexUnVisible[tankIndex.endY + 1][tankIndex.startX - 1] = true;
+      tankMapIndexUnVisible[tankIndex.endY + 1][tankIndex.startX] = true;
+      tankMapIndexUnVisible[tankIndex.endY + 1][tankIndex.endX] = true;
+      tankMapIndexUnVisible[tankIndex.endY + 1][tankIndex.endX + 1] = true;
+    }
+  });
 
   while (queue.length) {
     const currentPosition = queue.shift();
@@ -654,7 +677,7 @@ export const findTargetTankV2 = () => {
     if (finded) {
       break;
     }
-    for (let dir of movePostionDirection) {
+    for (let dir of movePositionDirectionRandom()) {
       const moveNextPosition = initPosition(
         currentPosition.x + dir.x,
         currentPosition.y + dir.y
@@ -675,7 +698,13 @@ export const findTargetTankV2 = () => {
         ) ||
         ["B", "T", "W"].includes(
           mapMatch[moveNextPosition.y + 1][moveNextPosition.x + 1] as never
-        )
+        ) ||
+        tankMapIndexUnVisible?.[moveNextPosition.y]?.[moveNextPosition.x] ||
+        tankMapIndexUnVisible?.[moveNextPosition.y + 1]?.[moveNextPosition.x] ||
+        tankMapIndexUnVisible?.[moveNextPosition.y]?.[moveNextPosition.x + 1] ||
+        tankMapIndexUnVisible?.[moveNextPosition.y + 1]?.[
+          moveNextPosition.x + 1
+        ]
       ) {
         continue;
       }
@@ -816,7 +845,7 @@ export const findToDefZoneOnMap = (
     if (finded) {
       break;
     }
-    for (let dir of movePostionDirection) {
+    for (let dir of movePositionDirectionRandom()) {
       const moveNextPosition = initPosition(
         currentPosition.x + dir.x,
         currentPosition.y + dir.y
@@ -934,7 +963,7 @@ export const findTargetOnMap = () => {
       }
       break;
     }
-    for (let dir of movePostionDirection) {
+    for (let dir of movePositionDirectionRandom()) {
       const moveNextPosition = initPosition(
         currentPosition.x + dir.x,
         currentPosition.y + dir.y
@@ -1383,12 +1412,18 @@ export const dodgeBullets = (
         orient as never
       );
       if (
-        !checkTankPositionIsObject(moveNextPosition as never) &&
-        !checkTankOverlap(moveNextPosition, tanks) &&
-        !checkBulletsInsideTank(
-          _tankPosition as never,
-          _bullets,
-          _tankPosition!.ms
+        (!checkTankPositionIsObject(moveNextPosition as never) &&
+          !checkTankOverlap(moveNextPosition, tanks) &&
+          !checkBulletsInsideTank(
+            _tankPosition as never,
+            _bullets,
+            _tankPosition!.ms
+          )) ||
+        !(
+          moveNextPosition!.x >= 848 ||
+          moveNextPosition!.x < 20 ||
+          moveNextPosition!.y >= 648 ||
+          moveNextPosition!.y < 20
         )
       ) {
         if (!dodgeRoad?.[moveNextPosition.y]?.[moveNextPosition.x]) {

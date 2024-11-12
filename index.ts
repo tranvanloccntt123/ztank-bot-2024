@@ -1,4 +1,4 @@
-import { TankTimeSpeed } from "./constants";
+import { MY_NAME, TankSize, TankTimeSpeed } from "./constants";
 import { joinMatch, moveTank, shoot } from "./connect";
 import {
   bulletPositionAtPlusTime,
@@ -6,6 +6,9 @@ import {
   sleep,
   tankAtNextTime,
   checkBulletRunningToTank,
+  isSameVerticalAxisWithSize,
+  isSameHorizontalAxisWithSize,
+  euclideanDistance,
 } from "./utils";
 import {
   MovePriority,
@@ -18,6 +21,7 @@ import {
   resolveStartPromise,
   road,
   startPromise,
+  tanks,
 } from "./store";
 import {
   findTargetSystem,
@@ -41,6 +45,13 @@ const init = async () => {
     try {
       if (road.index !== -1 && road.data.length && road.data[road.index]) {
         const orient = road.data[road.index];
+        if (orient === "SHOOT") {
+          // if (canMoveNextPosition) {
+          //   await sleep(1);
+          // }
+          shoot();
+          road.index = road.index + 1;
+        }
         canMoveNextPosition = true;
         if (
           myTank &&
@@ -76,13 +87,31 @@ const init = async () => {
               }
             }
           }
-        }
-        if (orient === "SHOOT") {
-          // if (canMoveNextPosition) {
-          //   await sleep(1);
-          // }
-          shoot();
-          road.index = road.index + 1;
+
+          if (canMoveNextPosition) {
+            tanks.forEach((tank) => {
+              if (
+                tank.name === MY_NAME ||
+                !tank.shootable ||
+                (tank.shootCooldown ?? 0) <= 20
+              ) {
+                return;
+              }
+              if (
+                (isSameVerticalAxisWithSize(tank, {
+                  ...nextPosition,
+                  size: TankSize,
+                }) ||
+                  isSameHorizontalAxisWithSize(tank, {
+                    ...nextPosition,
+                    size: TankSize,
+                  })) &&
+                euclideanDistance(tank, { ...nextPosition }) <= TankSize * 2
+              ) {
+                canMoveNextPosition = false;
+              }
+            });
+          }
         }
 
         if (canMoveNextPosition) {
@@ -90,9 +119,6 @@ const init = async () => {
             moveTank(orient);
             road.index = road.index + 1;
             await movePromise;
-          }
-          if (orient === "PAUSE") {
-            await sleep(2);
           }
         } else {
           clearRoad();
@@ -105,7 +131,6 @@ const init = async () => {
         clearRoad();
       }
     } catch (e) {
-      console.log("MAIN", e);
       clearRoad();
     } finally {
       if (!canMoveNextPosition) {
